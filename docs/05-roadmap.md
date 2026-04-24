@@ -22,6 +22,22 @@ Supporting metrics:
 - number of tone corrections per draft
 - metric trends by platform and post type
 
+## Current Progress Snapshot
+
+Already completed:
+
+- durable voice-memory foundation docs
+- initial Telegram export and metrics scripts
+- baseline CI workflow
+- PR guard workflow
+
+Next recommended steps:
+
+- reference library and refresh log
+- draft-versus-final feedback schema
+- edit-distance and revision-quality metrics
+- Telegram bot interface
+
 ## Product Principles
 
 - Human approval remains in the loop.
@@ -56,6 +72,12 @@ Deliverables:
 - corpus format
 - baseline metrics script
 - first implementation spec
+
+Status:
+
+- export script implemented
+- baseline metrics script implemented
+- feature memory documented
 
 ### Phase 2 — Reference Library And Refresh Loop
 

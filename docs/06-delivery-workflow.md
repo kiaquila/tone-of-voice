@@ -34,6 +34,7 @@ Already implemented:
 - CI for Python validation and tests
 - PR guard for docs/spec coverage
 - feature-memory validation script
+- first live PR verification with both checks passing
 
 Planned later:
 
