@@ -1,0 +1,9 @@
+.DS_Store
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.session
+data/raw/
+exports/

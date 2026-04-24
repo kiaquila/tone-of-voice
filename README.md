@@ -1,0 +1,49 @@
+# tone-of-voice
+
+Private working repository for capturing, updating, and reusing Kristina's evolving author voice across Telegram, Threads, and LinkedIn.
+
+## Naming
+
+In prose, the standard phrase is `tone of voice`.
+
+- Use `tone of voice` in normal writing.
+- Use `tone-of-voice` as a repository name, slug, or compound label when a hyphenated identifier is convenient.
+- This is a fixed collocation, not a set expression in the idiomatic sense.
+
+## Goal
+
+This repository is not a one-off prompt dump. It is durable memory for:
+
+- voice invariants that should survive across sessions
+- platform-specific adaptations
+- tagged reference examples
+- refresh notes based on newly published content
+- generation workflows for drafting new posts on demand
+
+## Initial Scope
+
+- Capture the current `@vibecodesh` tone snapshot
+- Store the first voice-memory architecture
+- Assess reuse of the existing Telethon integration from `vb-influencer`
+- Account for channel differences between Telegram, Threads, and LinkedIn
+
+## Recommended Working Loop
+
+1. Refresh source content from Telegram and other platforms.
+2. Update the current voice snapshot only when there is enough new material.
+3. Curate strong examples into a tagged reference library.
+4. Draft new platform-specific posts from the memory layers, not from a single prompt.
+5. Periodically revise the invariants and stop-list as the public voice evolves.
+
+## Repository Layout
+
+- `AGENTS.md` — instructions for future AI sessions
+- `docs/00-principles.md` — what this repo is for and how to keep it useful
+- `docs/01-current-voice-snapshot.md` — concise description of the current voice
+- `docs/02-memory-system.md` — long-term memory design
+- `docs/03-source-ingestion.md` — what we can ingest now and what needs new collectors
+- `docs/04-platform-adaptation.md` — how the voice should bend by platform
+
+## Current Decision
+
+Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
