@@ -13,3 +13,4 @@
 - [x] Add `tests/test_config.py`, `tests/test_telegram_export.py`, `tests/test_check_feature_memory.py`.
 - [x] Update `docs/05-roadmap.md` Phase 0 to `complete` and note the hardening pass under Phase 1.
 - [x] Run `pip install -e '.[dev]'` and `python -m pytest tests` locally; confirm 100% pass.
+- [x] Update `.github/workflows/ci.yml` to install via `pip install -e '.[dev]'` and run `python -m pytest tests` so the new `src/`-layout package resolves on CI.
