@@ -30,6 +30,8 @@ Already completed:
 - initial Telegram export and metrics scripts
 - baseline CI workflow
 - PR guard workflow
+- OSV scan workflow
+- Claude-review workflow scaffold
 
 Next recommended steps:
 

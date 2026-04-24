@@ -8,6 +8,8 @@ Current required checks:
 
 - `baseline-checks`
 - `guard`
+- `AI Review` (configuration-aware; active Claude review after repository setup)
+- `osv-scan`
 
 ## What These Checks Do
 
@@ -35,10 +37,11 @@ Already implemented:
 - PR guard for docs/spec coverage
 - feature-memory validation script
 - first live PR verification with both checks passing
+- OSV dependency scan for `requirements.txt`
+- Claude-review workflow scaffold with repository-level enablement switch
 
 Planned later:
 
-- AI review workflow
 - deploy workflow for bot/server components
 - eval workflow for draft-versus-final regression checks
 
@@ -48,10 +51,16 @@ A software PR is considered ready for review when:
 
 - `baseline-checks` is green
 - `guard` is green
+- `osv-scan` is green
 - docs reflect behavior or workflow changes
 - the active `specs/<feature-id>/` folder is complete
+
+When Claude review is enabled for the repository:
+
+- `AI Review` is green
 
 ## Notes For Future Sessions
 
 - Treat this file as the canonical summary of what delivery automation is already active.
 - If a future session adds AI review or deploy automation, update this file in the same PR.
+- Claude review activation requires repository configuration, not just workflow files.
