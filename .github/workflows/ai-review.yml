@@ -1,0 +1,246 @@
+name: AI Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to review
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ai-review:
+    name: AI Review
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+    steps:
+      - name: Resolve selected review policy
+        id: policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          selected="${{ vars.AI_REVIEW_AGENT }}"
+          if [ -z "$selected" ]; then
+            selected="disabled"
+          fi
+          echo "selected_agent=$selected" >> "$GITHUB_OUTPUT"
+
+      - name: Explain disabled review configuration
+        if: steps.policy.outputs.selected_agent != 'claude'
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## AI Review"
+            echo ""
+            echo "Claude review is currently disabled for this repository."
+            echo ""
+            echo "To enable it:"
+            echo "- set repository variable \`AI_REVIEW_AGENT=claude\`"
+            echo "- set repository secret \`ANTHROPIC_API_KEY\`"
+            echo "- rerun this workflow or push a new commit"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Resolve PR context
+        if: steps.policy.outputs.selected_agent == 'claude'
+        id: pr
+        uses: actions/github-script@v8
+        env:
+          AI_REVIEW_PR_NUMBER: ${{ inputs.pr_number }}
+        with:
+          script: |
+            const explicitPr = process.env.AI_REVIEW_PR_NUMBER;
+            const prNumber =
+              explicitPr ||
+              context.payload.pull_request?.number ||
+              context.payload.issue?.number;
+
+            if (!prNumber) {
+              core.setFailed("No pull request number was available.");
+              return;
+            }
+
+            const { data: pull } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: Number(prNumber),
+            });
+
+            core.setOutput("pr_number", String(pull.number));
+            core.setOutput("head_sha", pull.head.sha);
+            core.setOutput("checkout_ref", `refs/pull/${pull.number}/head`);
+            core.setOutput(
+              "is_fork",
+              pull.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}` ? "true" : "false",
+            );
+
+      - name: Detect bootstrap review-workflow PR
+        if: steps.policy.outputs.selected_agent == 'claude'
+        id: bootstrap
+        uses: actions/github-script@v8
+        env:
+          AI_REVIEW_PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        with:
+          script: |
+            const prNumber = process.env.AI_REVIEW_PR_NUMBER;
+            if (!prNumber) {
+              core.setOutput("skip", "false");
+              return;
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: Number(prNumber),
+              per_page: 100,
+            });
+
+            const changedAiReviewWorkflow = files.some(
+              (file) => file.filename === ".github/workflows/ai-review.yml",
+            );
+
+            core.setOutput("skip", changedAiReviewWorkflow ? "true" : "false");
+
+      - name: Explain bootstrap skip
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## AI Review"
+            echo ""
+            echo "Claude review was skipped for this PR because \`.github/workflows/ai-review.yml\` itself is being introduced or changed."
+            echo ""
+            echo "This is a bootstrap exception: Claude Code review requires the workflow file on the repository's default branch before it can review PRs through that workflow."
+            echo "After this PR lands on \`main\`, the next PR will use full Claude review."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork != 'true'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.pr.outputs.checkout_ref }}
+
+      - name: Ensure Claude review secret exists
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "AI_REVIEW_AGENT is set to claude, but ANTHROPIC_API_KEY is missing."
+            exit 1
+          fi
+
+      - name: Run Claude review agent
+        id: claude_review
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork != 'true'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: "Review pull request #${{ steps.pr.outputs.pr_number }} at head commit ${{ steps.pr.outputs.head_sha }}."
+          show_full_output: true
+          claude_args: |
+            --max-turns 20
+            --model claude-opus-4-6
+            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --system-prompt "Act as the pull-request reviewer for this repository. Use AGENTS.md, docs/05-roadmap.md, docs/06-delivery-workflow.md, and the changed files in the pull request as your primary context. Review pull request #${{ steps.pr.outputs.pr_number }} at head commit ${{ steps.pr.outputs.head_sha }}. Review the unified diff first, then inspect only changed files or directly referenced code that is strictly necessary to confirm a finding. Focus on material correctness, workflow regressions, and missing repository-memory updates. Do not modify code, do not create commits, and do not push branches. Your response MUST begin with exactly these three lines: AI_REVIEW_AGENT: claude, AI_REVIEW_SHA: ${{ steps.pr.outputs.head_sha }}, and AI_REVIEW_OUTCOME: pass|advisory|block, each on its own line. Then provide a short high-signal review summary."
+
+      - name: Post Claude review as issue comment
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork != 'true' && steps.claude_review.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+          EXECUTION_FILE: ${{ steps.claude_review.outputs.execution_file }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULT_FILE="${EXECUTION_FILE:-$RUNNER_TEMP/claude-execution-output.json}"
+          if [[ ! -f "$RESULT_FILE" ]]; then
+            echo "No Claude execution output file found."
+            exit 1
+          fi
+
+          RESULT=$(RESULT_FILE="$RESULT_FILE" python3 - <<'PY'
+          import json
+          import os
+
+          path = os.environ["RESULT_FILE"]
+          raw = open(path, encoding="utf-8").read().strip()
+
+          def extract_result(value):
+              if isinstance(value, dict):
+                  return value.get("result", "") or ""
+              if isinstance(value, list):
+                  result = ""
+                  for item in value:
+                      if isinstance(item, dict) and item.get("type") == "result" and item.get("result"):
+                          result = item["result"]
+                  return result
+              return ""
+
+          result = ""
+          try:
+              result = extract_result(json.loads(raw))
+          except json.JSONDecodeError:
+              for line in raw.splitlines():
+                  line = line.strip()
+                  if not line:
+                      continue
+                  try:
+                      result = extract_result(json.loads(line)) or result
+                  except json.JSONDecodeError:
+                      continue
+
+          print(result)
+          PY
+          )
+
+          if [[ -z "$RESULT" ]]; then
+            echo "Claude returned an empty review result."
+            exit 1
+          fi
+
+          gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+            --method POST \
+            --field body="$RESULT"
+
+      - name: Fail fork Claude review
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork == 'true'
+        shell: bash
+        run: |
+          echo "Claude review is disabled for fork PRs because repository secrets are not available."
+          exit 1
+
+      - name: Fail if Claude review did not complete successfully
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork != 'true' && steps.claude_review.outcome != 'success'
+        shell: bash
+        run: |
+          echo "Claude review did not complete successfully."
+          exit 1

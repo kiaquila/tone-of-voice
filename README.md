@@ -43,7 +43,28 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - `docs/02-memory-system.md` — long-term memory design
 - `docs/03-source-ingestion.md` — what we can ingest now and what needs new collectors
 - `docs/04-platform-adaptation.md` — how the voice should bend by platform
+- `docs/05-roadmap.md` — phased path toward a self-improving writing assistant
+- `docs/06-delivery-workflow.md` — CI, guardrails, and PR delivery contract
+- `specs/` — lightweight feature memory for software changes
+- `src/` — reusable implementation modules
+- `scripts/` — CLI entrypoints for ingestion and analysis
 
 ## Current Decision
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
+
+## First Working Commands
+
+Export Telegram posts:
+
+```bash
+python3 scripts/export_telegram_posts.py vibecodesh --limit 20
+```
+
+Build metrics from an exported corpus:
+
+```bash
+python3 scripts/build_telegram_metrics.py data/raw/telegram/vibecodesh.jsonl
+```
+
+If this repository does not have its own `.env`, the exporter will automatically try to reuse `../vb-influencer/.env` and the sibling Telethon session when available.
