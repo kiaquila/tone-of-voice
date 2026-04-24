@@ -12,7 +12,9 @@ Before proposing or drafting posts, read in this order:
 2. `docs/01-current-voice-snapshot.md`
 3. `docs/04-platform-adaptation.md`
 4. `docs/02-memory-system.md`
-5. Any later benchmark or reference-library files added to `docs/`
+5. `docs/05-roadmap.md`
+6. `docs/06-delivery-workflow.md`
+7. Any later benchmark or reference-library files added to `docs/`
 
 ## What Good Help Looks Like
 
@@ -31,3 +33,7 @@ Before proposing or drafting posts, read in this order:
 ## Update Rule
 
 Do not overwrite the voice snapshot casually. Update it only when there is meaningful new source material or a visible shift in how Kristina writes publicly.
+
+## Delivery Rule
+
+Software changes in this repository should land through pull requests and keep the documented roadmap, feature memory, and delivery workflow in sync.

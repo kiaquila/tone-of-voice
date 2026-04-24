@@ -1,0 +1,65 @@
+name: PR Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check docs coverage for tracked changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}")"
+
+          echo "Changed files:"
+          echo "$changed"
+
+          tracked_change=false
+          while IFS= read -r f; do
+            case "$f" in
+              src/*|src/**/*|scripts/*|scripts/**/*|tests/*|tests/**/*|.github/workflows/*|.github/workflows/**/*|requirements.txt)
+                tracked_change=true
+                break
+                ;;
+            esac
+          done <<< "$changed"
+
+          if [ "$tracked_change" = "false" ]; then
+            echo "No tracked product or workflow changes — guard passes."
+            exit 0
+          fi
+
+          docs_updated=false
+          while IFS= read -r f; do
+            case "$f" in
+              docs/*.md|docs/**/*.md|specs/*.md|specs/**/*.md|AGENTS.md|README.md)
+                docs_updated=true
+                break
+                ;;
+            esac
+          done <<< "$changed"
+
+          if [ "$docs_updated" = "false" ]; then
+            echo "Tracked changes landed without a durable docs update."
+            exit 1
+          fi
+
+          echo "Docs coverage OK."
+
+      - name: Validate feature memory
+        run: python scripts/check_feature_memory.py "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
