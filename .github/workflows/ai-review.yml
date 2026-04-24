@@ -96,15 +96,56 @@ jobs:
               pull.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}` ? "true" : "false",
             );
 
+      - name: Detect bootstrap review-workflow PR
+        if: steps.policy.outputs.selected_agent == 'claude'
+        id: bootstrap
+        uses: actions/github-script@v8
+        env:
+          AI_REVIEW_PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        with:
+          script: |
+            const prNumber = process.env.AI_REVIEW_PR_NUMBER;
+            if (!prNumber) {
+              core.setOutput("skip", "false");
+              return;
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: Number(prNumber),
+              per_page: 100,
+            });
+
+            const changedAiReviewWorkflow = files.some(
+              (file) => file.filename === ".github/workflows/ai-review.yml",
+            );
+
+            core.setOutput("skip", changedAiReviewWorkflow ? "true" : "false");
+
+      - name: Explain bootstrap skip
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## AI Review"
+            echo ""
+            echo "Claude review was skipped for this PR because \`.github/workflows/ai-review.yml\` itself is being introduced or changed."
+            echo ""
+            echo "This is a bootstrap exception: Claude Code review requires the workflow file on the repository's default branch before it can review PRs through that workflow."
+            echo "After this PR lands on \`main\`, the next PR will use full Claude review."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Checkout
-        if: steps.policy.outputs.selected_agent == 'claude' && steps.pr.outputs.is_fork != 'true'
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork != 'true'
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ steps.pr.outputs.checkout_ref }}
 
       - name: Ensure Claude review secret exists
-        if: steps.policy.outputs.selected_agent == 'claude'
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         shell: bash
@@ -117,7 +158,7 @@ jobs:
 
       - name: Run Claude review agent
         id: claude_review
-        if: steps.policy.outputs.selected_agent == 'claude' && steps.pr.outputs.is_fork != 'true'
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork != 'true'
         continue-on-error: true
         uses: anthropics/claude-code-action@v1
         with:
@@ -131,7 +172,7 @@ jobs:
             --system-prompt "Act as the pull-request reviewer for this repository. Use AGENTS.md, docs/05-roadmap.md, docs/06-delivery-workflow.md, and the changed files in the pull request as your primary context. Review pull request #${{ steps.pr.outputs.pr_number }} at head commit ${{ steps.pr.outputs.head_sha }}. Review the unified diff first, then inspect only changed files or directly referenced code that is strictly necessary to confirm a finding. Focus on material correctness, workflow regressions, and missing repository-memory updates. Do not modify code, do not create commits, and do not push branches. Your response MUST begin with exactly these three lines: AI_REVIEW_AGENT: claude, AI_REVIEW_SHA: ${{ steps.pr.outputs.head_sha }}, and AI_REVIEW_OUTCOME: pass|advisory|block, each on its own line. Then provide a short high-signal review summary."
 
       - name: Post Claude review as issue comment
-        if: steps.policy.outputs.selected_agent == 'claude' && steps.pr.outputs.is_fork != 'true' && steps.claude_review.outcome == 'success'
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork != 'true' && steps.claude_review.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
@@ -191,14 +232,14 @@ jobs:
             --field body="$RESULT"
 
       - name: Fail fork Claude review
-        if: steps.policy.outputs.selected_agent == 'claude' && steps.pr.outputs.is_fork == 'true'
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork == 'true'
         shell: bash
         run: |
           echo "Claude review is disabled for fork PRs because repository secrets are not available."
           exit 1
 
       - name: Fail if Claude review did not complete successfully
-        if: steps.policy.outputs.selected_agent == 'claude' && steps.pr.outputs.is_fork != 'true' && steps.claude_review.outcome != 'success'
+        if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork != 'true' && steps.claude_review.outcome != 'success'
         shell: bash
         run: |
           echo "Claude review did not complete successfully."
