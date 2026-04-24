@@ -33,7 +33,12 @@ def ensure_telegram_credentials() -> tuple[int, str]:
             "Provide an env file or export the variables before running."
         )
 
-    return int(api_id), api_hash
+    try:
+        return int(api_id), api_hash
+    except ValueError as exc:
+        raise RuntimeError(
+            f"TELEGRAM_API_ID must be an integer, got: {api_id!r}"
+        ) from exc
 
 
 async def export_channel_posts(

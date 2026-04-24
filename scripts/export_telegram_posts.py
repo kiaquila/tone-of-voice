@@ -3,11 +3,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import sys
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+from tone_of_voice.config import load_project_env, resolve_session_stem
+from tone_of_voice.telegram_export import export_channel_posts, write_jsonl
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,9 +35,6 @@ def parse_args() -> argparse.Namespace:
 
 async def main() -> None:
     args = parse_args()
-
-    from tone_of_voice.config import load_project_env, resolve_session_stem
-    from tone_of_voice.telegram_export import export_channel_posts, write_jsonl
 
     env_path = load_project_env(args.env_file)
     session_stem = resolve_session_stem(session_dir=args.session_dir)

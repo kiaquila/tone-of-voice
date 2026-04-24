@@ -4,10 +4,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-import sys
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
 
 from tone_of_voice.metrics import (
     compute_corpus_metrics,
