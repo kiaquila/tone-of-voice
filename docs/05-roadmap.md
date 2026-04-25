@@ -52,7 +52,7 @@ Next recommended steps:
 
 ### Phase 0 — Memory Foundation
 
-Status: in progress
+Status: complete
 
 Goals:
 
@@ -80,6 +80,7 @@ Status:
 - export script implemented
 - baseline metrics script implemented
 - feature memory documented
+- post-review hardening: pyproject install layout, broader test coverage, emoji-signal regex fix, workflow consistency
 
 ### Phase 2 — Reference Library And Refresh Loop
 

@@ -20,11 +20,14 @@ jobs:
           fetch-depth: 0
 
       - name: Check docs coverage for tracked changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         shell: bash
         run: |
           set -euo pipefail
 
-          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}")"
+          changed="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
 
           echo "Changed files:"
           echo "$changed"
@@ -32,7 +35,7 @@ jobs:
           tracked_change=false
           while IFS= read -r f; do
             case "$f" in
-              src/*|src/**/*|scripts/*|scripts/**/*|tests/*|tests/**/*|.github/workflows/*|.github/workflows/**/*|requirements.txt)
+              src/*|src/**/*|scripts/*|scripts/**/*|tests/*|tests/**/*|.github/workflows/*|.github/workflows/**/*|requirements.txt|requirements-dev.txt|pyproject.toml|README.md)
                 tracked_change=true
                 break
                 ;;
@@ -62,4 +65,7 @@ jobs:
           echo "Docs coverage OK."
 
       - name: Validate feature memory
-        run: python scripts/check_feature_memory.py "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python scripts/check_feature_memory.py "${BASE_SHA}" "${HEAD_SHA}"

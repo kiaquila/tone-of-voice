@@ -139,7 +139,7 @@ jobs:
 
       - name: Checkout
         if: steps.policy.outputs.selected_agent == 'claude' && steps.bootstrap.outputs.skip != 'true' && steps.pr.outputs.is_fork != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ steps.pr.outputs.checkout_ref }}

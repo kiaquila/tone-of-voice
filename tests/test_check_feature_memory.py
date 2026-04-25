@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+import os
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
+# NOTE: sys.path shim is intentional here — check_feature_memory.py is a
+# standalone script, not an installed package module. This is the only
+# remaining shim after the src-layout migration.
+sys.path.insert(0, str(SCRIPTS_DIR))
+
+import check_feature_memory as cfm
+
+
+class IsProductPathTest(unittest.TestCase):
+    def test_tracked_prefixes(self) -> None:
+        self.assertTrue(cfm.is_product_path("src/tone_of_voice/foo.py"))
+        self.assertTrue(cfm.is_product_path("scripts/build_telegram_metrics.py"))
+        self.assertTrue(cfm.is_product_path("tests/test_metrics.py"))
+        self.assertTrue(cfm.is_product_path(".github/workflows/pr-guard.yml"))
+
+    def test_tracked_files(self) -> None:
+        self.assertTrue(cfm.is_product_path("requirements.txt"))
+        self.assertTrue(cfm.is_product_path("requirements-dev.txt"))
+        self.assertTrue(cfm.is_product_path("pyproject.toml"))
+        self.assertTrue(cfm.is_product_path("README.md"))
+
+    def test_untracked_paths(self) -> None:
+        self.assertFalse(cfm.is_product_path("docs/05-roadmap.md"))
+        self.assertFalse(cfm.is_product_path("AGENTS.md"))
+        self.assertFalse(cfm.is_product_path("specs/001-x/spec.md"))
+
+
+class FeatureIdsTest(unittest.TestCase):
+    def test_extracts_feature_id_from_specs_path(self) -> None:
+        ids = cfm.feature_ids(
+            [
+                "specs/001-telegram-foundation/spec.md",
+                "specs/004-quality-fixes/plan.md",
+                "src/tone_of_voice/metrics.py",
+            ]
+        )
+        self.assertEqual(ids, {"001-telegram-foundation", "004-quality-fixes"})
+
+    def test_ignores_non_specs_paths(self) -> None:
+        self.assertEqual(cfm.feature_ids(["docs/05-roadmap.md", "src/foo.py"]), set())
+
+
+class HasCompleteFeatureMemoryTest(unittest.TestCase):
+    # WARNING: these tests use os.chdir and are NOT safe for parallel execution
+    # (e.g., pytest-xdist). Run with a single worker when using parallelism.
+
+    def setUp(self) -> None:
+        self._cwd = Path.cwd()
+
+    def tearDown(self) -> None:
+        os.chdir(self._cwd)
+
+    def test_complete_when_all_three_files_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            os.chdir(td)
+            base = Path("specs/099-demo")
+            base.mkdir(parents=True)
+            for name in ("spec.md", "plan.md", "tasks.md"):
+                (base / name).write_text("ok", encoding="utf-8")
+            self.assertTrue(cfm.has_complete_feature_memory("099-demo"))
+
+    def test_incomplete_when_missing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            os.chdir(td)
+            base = Path("specs/099-demo")
+            base.mkdir(parents=True)
+            (base / "spec.md").write_text("ok", encoding="utf-8")
+            self.assertFalse(cfm.has_complete_feature_memory("099-demo"))
+
+
+class ParseArgsTest(unittest.TestCase):
+    def test_defaults(self) -> None:
+        args = cfm.parse_args([])
+        self.assertEqual(args.base_ref, "origin/main")
+        self.assertEqual(args.head_ref, "HEAD")
+        self.assertFalse(args.worktree)
+
+    def test_worktree_flag_independent_of_position(self) -> None:
+        args = cfm.parse_args(["--worktree", "main", "feature"])
+        self.assertTrue(args.worktree)
+        self.assertEqual(args.base_ref, "main")
+        self.assertEqual(args.head_ref, "feature")
+
+        args = cfm.parse_args(["main", "--worktree", "feature"])
+        self.assertTrue(args.worktree)
+        self.assertEqual(args.base_ref, "main")
+        self.assertEqual(args.head_ref, "feature")
+
+
+if __name__ == "__main__":
+    unittest.main()

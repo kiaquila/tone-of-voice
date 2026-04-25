@@ -26,13 +26,13 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -e '.[dev]'
 
       - name: Validate Python syntax
         run: python -m py_compile scripts/*.py src/tone_of_voice/*.py tests/*.py
 
       - name: Run unit tests
-        run: python -m unittest tests/test_metrics.py
+        run: python -m pytest tests
 
       - name: Smoke-check CLI help
         run: |

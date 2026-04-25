@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -14,6 +15,9 @@ PRODUCT_PREFIXES = (
 )
 PRODUCT_FILES = {
     "requirements.txt",
+    "requirements-dev.txt",
+    "pyproject.toml",
+    "README.md",
 }
 
 
@@ -56,15 +60,36 @@ def has_complete_feature_memory(feature_id: str) -> bool:
     return all((base / name).exists() for name in required)
 
 
-def main() -> int:
-    inspect_worktree = "--worktree" in sys.argv
-    args = [arg for arg in sys.argv[1:] if arg != "--worktree"]
-    base_ref = args[0] if len(args) > 0 else "origin/main"
-    head_ref = args[1] if len(args) > 1 else "HEAD"
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Verify that PRs touching tracked product paths ship matching feature memory.",
+    )
+    parser.add_argument(
+        "base_ref",
+        nargs="?",
+        default="origin/main",
+        help="Base ref for the diff (defaults to origin/main).",
+    )
+    parser.add_argument(
+        "head_ref",
+        nargs="?",
+        default="HEAD",
+        help="Head ref for the diff (defaults to HEAD).",
+    )
+    parser.add_argument(
+        "--worktree",
+        action="store_true",
+        help="Inspect the dirty worktree instead of a base...head diff.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     changed_files = (
         git_changed_files_in_worktree()
-        if inspect_worktree
-        else git_changed_files(base_ref, head_ref)
+        if args.worktree
+        else git_changed_files(args.base_ref, args.head_ref)
     )
 
     if not any(is_product_path(path) for path in changed_files):

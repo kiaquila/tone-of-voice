@@ -12,10 +12,30 @@ def repo_root() -> Path:
 
 def default_env_candidates() -> list[Path]:
     root = repo_root()
-    return [
-        root / ".env",
-        root.parent / "vb-influencer" / ".env",
-    ]
+    candidates = [root / ".env"]
+
+    # Allow falling back to a sibling repo (for example, ../vb-influencer/.env)
+    # so the same Telegram credentials can be reused without duplication.
+    fallback = (os.getenv("TONE_OF_VOICE_FALLBACK_ENV") or "").strip() or "../vb-influencer/.env"
+    if Path(fallback).is_absolute():
+        fallback_path = Path(fallback)
+    else:
+        fallback_path = (root / fallback).resolve()
+
+    # Confine *relative* paths to the parent directory tree to prevent traversal
+    # (e.g. "../../etc/passwd"). Absolute paths are accepted as explicitly configured.
+    if not Path(fallback).is_absolute():
+        allowed_root = root.parent.resolve()
+        if not fallback_path.is_relative_to(allowed_root):
+            raise ValueError(
+                f"TONE_OF_VOICE_FALLBACK_ENV resolved to {fallback_path}, "
+                f"which is outside the allowed root {allowed_root}"
+            )
+
+    if fallback_path != (root / ".env").resolve():
+        candidates.append(fallback_path)
+
+    return candidates
 
 
 def load_project_env(explicit_env_file: str | None = None) -> Path | None:

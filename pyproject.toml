@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tone-of-voice"
+version = "0.1.0"
+description = "Durable memory and tooling for Kristina's public writing voice."
+requires-python = ">=3.11"
+readme = "README.md"
+dependencies = [
+    "python-dotenv>=1.0,<2.0",
+    "Telethon>=1.36,<2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pygments>=2.20.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

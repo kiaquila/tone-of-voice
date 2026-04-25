@@ -6,6 +6,27 @@ from collections import Counter
 from pathlib import Path
 
 
+EMOJI_PATTERN = re.compile(
+    "["
+    "©®"           # © ® (copyright, registered)
+    " -➿"          # misc symbols and dingbats (consolidated, replaces two overlapping ranges)
+    "⤴-⤵"          # curved arrows
+    "〰〽"           # wavy dash, part alternation mark
+    "\U0001f000-\U0001f2ff"         # mahjong, playing cards, enclosed alphanumeric supplement
+    "\U0001f1e6-\U0001f1ff"         # regional indicators (flags)
+    "\U0001f300-\U0001f5ff"         # misc symbols and pictographs
+    "\U0001f600-\U0001f64f"  # emoticons
+    "\U0001f680-\U0001f6ff"  # transport and map
+    "\U0001f700-\U0001f77f"  # alchemical symbols
+    "\U0001f780-\U0001f7ff"  # geometric shapes extended
+    "\U0001f800-\U0001f8ff"  # supplemental arrows
+    "\U0001f900-\U0001f9ff"  # supplemental symbols and pictographs
+    "\U0001fa00-\U0001fa6f"  # chess symbols
+    "\U0001fa70-\U0001faff"  # symbols and pictographs extended-A
+    "]"
+)
+
+
 STOP_WORDS = {
     "и",
     "в",
@@ -184,10 +205,11 @@ def compute_corpus_metrics(records: list[dict], top_n: int = 15) -> dict:
             "posts_with_exclamations": sum("!" in text for text in texts),
             "posts_with_ellipsis": sum("..." in text or "…" in text for text in texts),
             "posts_with_emoji": sum(
-                bool(re.search(r"[\U0001F300-\U0001FAFF😁-🙏❤️✨🔥😂😏🫠]", text))
-                for text in texts
+                bool(EMOJI_PATTERN.search(text)) for text in texts
             ),
-            "posts_with_links": sum("http://" in text or "https://" in text for text in texts),
+            "posts_with_links": sum(
+                "http://" in text or "https://" in text for text in texts
+            ),
             "posts_with_markdown_links": sum("](" in text for text in texts),
         },
         "top_starters": starters.most_common(top_n),
