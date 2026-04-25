@@ -32,10 +32,14 @@ const isCurrentHeadActivationEvent = (entry, headSha) =>
     entry?.event === "head_ref_restored") &&
     entry?.commit_id === headSha);
 
+// Match Codex reviews on identity + head SHA only. Avoid relying on the
+// review body containing the literal "Codex Review" — connector
+// templates change over time and a valid review with an empty body
+// would otherwise time out the gate even though Codex actually
+// approved the current commit.
 export const matchesCodexReview = (review, headSha) =>
   review?.commit_id === headSha &&
-  codexReviewerLogins.has(review?.user?.login || "") &&
-  (review?.body || "").includes("Codex Review");
+  codexReviewerLogins.has(review?.user?.login || "");
 
 export const matchesCodexSummaryComment = (comment) =>
   isCodexBotComment(comment) && codexSummaryPrefix.test(getBody(comment));

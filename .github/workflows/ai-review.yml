@@ -37,19 +37,16 @@ concurrency:
 
 jobs:
   ai-review:
-    # Gate-based path: gemini and codex (and unset default → codex)
+    # The job ALWAYS runs for non-draft PRs and workflow_dispatch.
+    # Agent selection is validated inside the policy step so that
+    # unsupported AI_REVIEW_AGENT values fail the check instead of
+    # being silently skipped (skipped jobs report success for
+    # required checks, which would reintroduce a merge-bypass path).
     if: >
+      github.event_name == 'workflow_dispatch' ||
       (
-        github.event_name == 'workflow_dispatch' ||
-        (
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.draft == false
-        )
-      ) &&
-      (
-        vars.AI_REVIEW_AGENT == '' ||
-        vars.AI_REVIEW_AGENT == 'gemini' ||
-        vars.AI_REVIEW_AGENT == 'codex'
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.draft == false
       )
     name: AI Review
     runs-on: ubuntu-latest
@@ -121,6 +118,15 @@ jobs:
           selected="${{ vars.AI_REVIEW_AGENT }}"
           if [ -z "$selected" ]; then
             selected="codex"
+          fi
+
+          # tone-of-voice is codex-only by repository policy. Any other
+          # value (including typos) must fail closed: silently skipping
+          # would let the required AI Review check report success
+          # without an actual review running.
+          if [ "$selected" != "codex" ]; then
+            echo "::error::Unsupported AI_REVIEW_AGENT value: '$selected'. Allowed: 'codex' (or unset, which defaults to codex)."
+            exit 1
           fi
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
