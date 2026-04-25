@@ -29,7 +29,7 @@ class LoadProjectEnvTest(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             config.load_project_env("/nonexistent/path/.env.absent")
 
-    def test_explicit_existing_file_loads(self, tmp_dir: str | None = None) -> None:
+    def test_explicit_existing_file_loads(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as td:

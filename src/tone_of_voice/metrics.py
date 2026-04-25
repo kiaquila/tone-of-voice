@@ -8,18 +8,21 @@ from pathlib import Path
 
 EMOJI_PATTERN = re.compile(
     "["
-    "\U0001f300-\U0001f5ff"
-    "\U0001f600-\U0001f64f"
-    "\U0001f680-\U0001f6ff"
-    "\U0001f700-\U0001f77f"
-    "\U0001f780-\U0001f7ff"
-    "\U0001f800-\U0001f8ff"
-    "\U0001f900-\U0001f9ff"
-    "\U0001fa00-\U0001fa6f"
-    "\U0001fa70-\U0001faff"
-    "\U00002600-\U000027bf"
-    "\U00002700-\U000027bf"
-    "\U0001f1e6-\U0001f1ff"
+    "©®"           # © ® (copyright, registered)
+    " -➿"          # misc symbols and dingbats (consolidated, replaces two overlapping ranges)
+    "⤴-⤵"          # curved arrows
+    "〰〽"           # wavy dash, part alternation mark
+    "\U0001f000-\U0001f2ff"         # mahjong, playing cards, enclosed alphanumeric supplement
+    "\U0001f1e6-\U0001f1ff"         # regional indicators (flags)
+    "\U0001f300-\U0001f5ff"         # misc symbols and pictographs
+    "\U0001f600-\U0001f64f"  # emoticons
+    "\U0001f680-\U0001f6ff"  # transport and map
+    "\U0001f700-\U0001f77f"  # alchemical symbols
+    "\U0001f780-\U0001f7ff"  # geometric shapes extended
+    "\U0001f800-\U0001f8ff"  # supplemental arrows
+    "\U0001f900-\U0001f9ff"  # supplemental symbols and pictographs
+    "\U0001fa00-\U0001fa6f"  # chess symbols
+    "\U0001fa70-\U0001faff"  # symbols and pictographs extended-A
     "]"
 )
 
@@ -205,7 +208,7 @@ def compute_corpus_metrics(records: list[dict], top_n: int = 15) -> dict:
                 bool(EMOJI_PATTERN.search(text)) for text in texts
             ),
             "posts_with_links": sum(
-                bool("http://" in text or "https://" in text) for text in texts
+                "http://" in text or "https://" in text for text in texts
             ),
             "posts_with_markdown_links": sum("](" in text for text in texts),
         },

@@ -30,3 +30,4 @@ jobs:
           scan-args: |-
             --lockfile=requirements.txt:requirements.txt
             --format=table
+            .

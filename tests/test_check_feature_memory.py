@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
+# NOTE: sys.path shim is intentional here — check_feature_memory.py is a
+# standalone script, not an installed package module. This is the only
+# remaining shim after the src-layout migration.
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 import check_feature_memory as cfm
@@ -46,6 +50,9 @@ class FeatureIdsTest(unittest.TestCase):
 
 
 class HasCompleteFeatureMemoryTest(unittest.TestCase):
+    # WARNING: these tests use os.chdir and are NOT safe for parallel execution
+    # (e.g., pytest-xdist). Run with a single worker when using parallelism.
+
     def setUp(self) -> None:
         self._cwd = Path.cwd()
 
@@ -53,8 +60,6 @@ class HasCompleteFeatureMemoryTest(unittest.TestCase):
         os.chdir(self._cwd)
 
     def test_complete_when_all_three_files_exist(self) -> None:
-        import tempfile
-
         with tempfile.TemporaryDirectory() as td:
             os.chdir(td)
             base = Path("specs/099-demo")
@@ -64,8 +69,6 @@ class HasCompleteFeatureMemoryTest(unittest.TestCase):
             self.assertTrue(cfm.has_complete_feature_memory("099-demo"))
 
     def test_incomplete_when_missing_file(self) -> None:
-        import tempfile
-
         with tempfile.TemporaryDirectory() as td:
             os.chdir(td)
             base = Path("specs/099-demo")
