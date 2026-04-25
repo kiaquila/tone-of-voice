@@ -16,6 +16,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pygments>=2.20.0",
 ]
 
 [tool.setuptools.packages.find]
