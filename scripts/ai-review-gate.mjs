@@ -118,17 +118,16 @@ const listPaginated = async (path) => {
   return items;
 };
 
-const listNewestPullReviews = async (path) => {
-  const firstResponse = await apiFetch(path);
-  const lastPath = getPaginationPath(firstResponse.headers.get("link"), "last");
-
-  if (!lastPath || lastPath === path) {
-    return firstResponse.json();
-  }
-
-  const lastResponse = await apiFetch(lastPath);
-  return lastResponse.json();
-};
+// IMPORTANT: do NOT use a "newest-page-only" optimisation here.
+// `/pulls/{n}/reviews` is paginated chronologically (oldest first,
+// newest last). A previous version of this function fetched only the
+// last page, which silently dropped a valid Codex review on the
+// current head SHA whenever the PR accumulated more than 100 reviews.
+// In that case the gate would time out even though a qualifying
+// review existed. Full pagination is the only correct strategy:
+// callers downstream filter by trigger time and head SHA and pick
+// the latest match, so they need every review.
+const listAllPullReviews = async (path) => listPaginated(path);
 
 const request = async (path, init = {}) => {
   const response = await apiFetch(path, init);
@@ -613,7 +612,7 @@ while (Date.now() < deadline) {
       }
     }
   } else if (selectedAgent === "codex") {
-    const reviews = await listNewestPullReviews(
+    const reviews = await listAllPullReviews(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );
     const recentReviews = reviews.filter(
@@ -806,7 +805,7 @@ while (Date.now() < deadline) {
       }
     }
   } else {
-    const reviews = await listNewestPullReviews(
+    const reviews = await listAllPullReviews(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );
     const recentReviews = reviews.filter(
