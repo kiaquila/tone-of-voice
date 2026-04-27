@@ -150,6 +150,17 @@ const buildIssueCommentsPath = (sinceTimestamp) =>
     sinceTimestamp,
   )}`;
 
+// IMPORTANT: do NOT pass a `sinceTimestamp` derived from a review's
+// `submitted_at`. GitHub's `since` filter returns only comments with
+// `updated_at` STRICTLY AFTER the supplied timestamp. Inline comments
+// posted in the same second as the review's submission would be
+// excluded, which would make `commentsForReview.length === 0` and the
+// gate would incorrectly pass a `COMMENTED` review as "no findings".
+// Filter by `pull_request_review_id` AFTER fetching all comments —
+// that is the authoritative correlation between comment and review.
+// `since` is kept as an optional argument only for use cases that do
+// not need to enumerate findings against a specific review (none in
+// the current gate code).
 const buildPullReviewCommentsPath = (sinceTimestamp) =>
   `/repos/${owner}/${repo}/pulls/${prNumber}/comments?per_page=100&sort=updated&direction=desc${buildSinceQuery(
     sinceTimestamp,
@@ -356,11 +367,11 @@ const classifyCodexReview = async (review) => {
     };
   }
 
-  const reviewComments = await listPaginated(
-    buildPullReviewCommentsPath(
-      review.submitted_at ? new Date(review.submitted_at).getTime() : 0,
-    ),
-  );
+  // Fetch ALL inline review comments (no `since` cutoff). See the
+  // comment on buildPullReviewCommentsPath — using submitted_at as a
+  // since bound would race with same-second inline comments and let
+  // blocking findings slip through as "no findings".
+  const reviewComments = await listPaginated(buildPullReviewCommentsPath());
   const commentsForReview = reviewComments.filter(
     (comment) => comment.pull_request_review_id === review.id,
   );
@@ -445,11 +456,10 @@ const classifyGeminiReview = async (review) => {
     };
   }
 
-  const reviewComments = await listPaginated(
-    buildPullReviewCommentsPath(
-      review.submitted_at ? new Date(review.submitted_at).getTime() : 0,
-    ),
-  );
+  // Fetch ALL inline review comments (no `since` cutoff). See the
+  // comment on buildPullReviewCommentsPath for why a submitted_at
+  // since bound is unsafe.
+  const reviewComments = await listPaginated(buildPullReviewCommentsPath());
   const commentsForReview = reviewComments.filter(
     (comment) => comment.pull_request_review_id === review.id,
   );
