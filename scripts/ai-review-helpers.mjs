@@ -6,6 +6,22 @@ const reviewerBotLogins = new Set([
 
 export const codexReviewerLogins = new Set(["chatgpt-codex-connector[bot]"]);
 
+// Only trigger comments from trusted authors are honored as authoritative
+// review boundaries. Without this check, an untrusted commenter on a
+// public PR can post `@codex review`, Codex Cloud responds with a
+// "create an environment" / "connect Codex account" setup error, and
+// `pickAuthoritativeCodexSkipModeComment` would treat that error as
+// the latest gate verdict — failing the required AI Review check
+// even when a valid Codex review already exists for the head SHA.
+// `ai-command-policy.yml` enforces the same restriction at the
+// command-routing layer, but the gate's own timeline analysis runs
+// independently and must enforce it too.
+const trustedTriggerAssociations = new Set([
+  "OWNER",
+  "MEMBER",
+  "COLLABORATOR",
+]);
+
 const codexSummaryPrefix = /^Codex Review:/i;
 const codexNoIssuesPattern =
   /did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues/i;
@@ -24,7 +40,8 @@ const isCodexBotComment = (entry) =>
 const isHumanCodexTriggerComment = (entry) =>
   isCommentEvent(entry) &&
   codexTriggerPattern.test(getBody(entry)) &&
-  !reviewerBotLogins.has(getLogin(entry));
+  !reviewerBotLogins.has(getLogin(entry)) &&
+  trustedTriggerAssociations.has(entry?.author_association || "");
 
 const isCurrentHeadActivationEvent = (entry, headSha) =>
   (entry?.event === "committed" && entry?.sha === headSha) ||
