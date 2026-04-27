@@ -65,53 +65,17 @@ jobs:
           AI_REVIEW_PR_NUMBER: ${{ inputs.pr_number }}
         run: node scripts/resolve-pr-context.mjs
 
-      - name: Detect bootstrap review-infrastructure PR
-        id: bootstrap
-        if: steps.pr.outputs.is_pull_request == 'true'
-        uses: actions/github-script@v8
-        env:
-          AI_REVIEW_PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
-        with:
-          script: |
-            const prNumber = process.env.AI_REVIEW_PR_NUMBER;
-            if (!prNumber) {
-              core.setOutput("skip", "false");
-              return;
-            }
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: Number(prNumber),
-              per_page: 100,
-            });
-            const bootstrapFiles = new Set([
-              ".github/workflows/ai-review.yml",
-              ".github/workflows/ai-command-policy.yml",
-              "scripts/ai-review-gate.mjs",
-              "scripts/ai-review-helpers.mjs",
-              "scripts/resolve-pr-context.mjs",
-            ]);
-            const touchesBootstrap = files.some((file) =>
-              bootstrapFiles.has(file.filename),
-            );
-            core.setOutput("skip", touchesBootstrap ? "true" : "false");
-
-      - name: Explain bootstrap skip
-        if: steps.bootstrap.outputs.skip == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          {
-            echo "## AI Review"
-            echo ""
-            echo "AI Review gate was skipped for this PR because the gate workflow or its scripts are being introduced or changed."
-            echo "The gate cannot reliably review a change to itself."
-            echo "After this PR lands on \`main\`, the next PR will use the full AI Review gate."
-          } >> "$GITHUB_STEP_SUMMARY"
+      # No bootstrap-skip carve-out by design. A skipped step reports
+      # success to branch protection, which would turn the required
+      # AI Review check green without a real review on the current
+      # head SHA — the same merge-bypass shape we deliberately closed
+      # for the AI_REVIEW_AGENT job-level filter. The introducing PR
+      # for the gate must be merged via a single owner-only admin
+      # override (`gh pr merge --admin`), then branch protection is
+      # applied; every PR after that runs the full gate.
 
       - name: Resolve selected review policy
         id: policy
-        if: steps.bootstrap.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -156,11 +120,9 @@ jobs:
 
       - name: Mark native review start
         id: start
-        if: steps.bootstrap.outputs.skip != 'true'
         run: echo "triggered_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Route and validate selected native review
-        if: steps.bootstrap.outputs.skip != 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           AI_REVIEW_AGENT: ${{ steps.policy.outputs.selected_agent }}

@@ -110,23 +110,11 @@ jobs:
             ) || defaults[kind];
 
             if (selectedAgent === requestedAgent) {
-              if (
-                kind === "review" &&
-                requestedAgent === "claude" &&
-                context.payload.issue?.number
-              ) {
-                await github.rest.actions.createWorkflowDispatch({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  workflow_id: "ai-review.yml",
-                  ref: context.payload.repository.default_branch,
-                  inputs: {
-                    pr_number: String(context.payload.issue.number),
-                    trigger_mode: "skip",
-                  },
-                });
-                core.info(`Dispatched AI Review for PR #${context.payload.issue.number}`);
-              }
+              // Note: claude review dispatch was removed because tone-of-voice's
+              // ai-review.yml is codex-only and hard-fails on selected_agent === 'claude'.
+              // Dispatching it for `@claude review once` would produce a guaranteed
+              // failure rather than a useful action. If claude review is ever
+              // re-enabled, restore the dispatch here.
 
               if (kind === "review" && requestedAgent === "codex") {
                 core.info(
