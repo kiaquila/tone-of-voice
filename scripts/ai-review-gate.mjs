@@ -9,6 +9,7 @@ import {
   matchesCodexReview,
   matchesCodexSummaryComment,
   pickAuthoritativeCodexSkipModeComment,
+  supportedReviewStates,
 } from "./ai-review-helpers.mjs";
 
 const token = process.env.GITHUB_TOKEN;
@@ -278,9 +279,15 @@ const ensureTriggerComment = async () => {
   });
 };
 
+// State filter mirrors matchesCodexReview: anything outside
+// supportedReviewStates (e.g. DISMISSED) must NOT match here, or the
+// pick-latest functions would keep returning that unclassifiable
+// review and the polling loop would stall to timeout instead of
+// falling through to an earlier qualifying review on the same SHA.
 const matchesGeminiReview = (review) =>
   review.commit_id === headSha &&
-  geminiReviewerLogins.has(review.user?.login || "");
+  geminiReviewerLogins.has(review.user?.login || "") &&
+  supportedReviewStates.has(review?.state || "");
 
 const extractClaudeOutcome = (body) => {
   const match = body.match(/^AI_REVIEW_OUTCOME:\s*(pass|advisory|block)\s*$/im);

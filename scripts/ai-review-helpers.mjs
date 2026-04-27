@@ -63,14 +63,30 @@ const isCurrentHeadActivationEvent = (entry, headSha) =>
     entry?.event === "head_ref_restored") &&
     entry?.commit_id === headSha);
 
-// Match Codex reviews on identity + head SHA only. Avoid relying on the
-// review body containing the literal "Codex Review" — connector
-// templates change over time and a valid review with an empty body
-// would otherwise time out the gate even though Codex actually
-// approved the current commit.
+// Review states the gate knows how to classify. Anything outside this
+// set (notably `DISMISSED` and `PENDING`) must NOT be matched here,
+// otherwise `pickLatestCodexReview` would keep returning that
+// unclassifiable review on every poll iteration, the classifier would
+// answer "pending", and the loop would stall until the 20-minute
+// timeout — turning a recoverable state into a guaranteed false-fail
+// (an earlier qualifying review on the same SHA would never be
+// considered).
+export const supportedReviewStates = new Set([
+  "APPROVED",
+  "CHANGES_REQUESTED",
+  "COMMENTED",
+]);
+
+// Match Codex reviews on identity + head SHA + a classifiable state.
+// Avoid relying on the review body containing the literal
+// "Codex Review" — connector templates change over time and a valid
+// review with an empty body would otherwise time out the gate.
+// State must be in `supportedReviewStates` so the polling loop falls
+// through to earlier reviews when the latest one is e.g. DISMISSED.
 export const matchesCodexReview = (review, headSha) =>
   review?.commit_id === headSha &&
-  codexReviewerLogins.has(review?.user?.login || "");
+  codexReviewerLogins.has(review?.user?.login || "") &&
+  supportedReviewStates.has(review?.state || "");
 
 export const matchesCodexSummaryComment = (comment) =>
   isCodexBotComment(comment) && codexSummaryPrefix.test(getBody(comment));
