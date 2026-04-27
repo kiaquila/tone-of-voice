@@ -33,6 +33,8 @@ Out of scope:
    - a Codex summary comment posted after the latest head activation contains a recognized "no major issues" reply.
 4. The gate must fail with a clear message if Codex reports "no environment configured" or "no connected account" for the repository.
 5. The workflow must NOT have a bootstrap-skip carve-out. Skipped steps report success to branch protection, which would turn the required AI Review check green without a real review on the current head SHA — the same merge-bypass shape the agent-validation requirement closes. The introducing PR for the gate is merged via a single owner-only `gh pr merge --admin` override (because branch protection is not yet active for it), and every PR after that runs the full gate.
+
+9. The workflow must check out the default branch (`main`) — i.e., the trusted base — never the PR ref. Running gate scripts from the PR workspace lets a contributor short-circuit the required check by editing `scripts/ai-review-gate.mjs` or its dependencies in their PR. Gate scripts never need PR-supplied code; they only need `GITHUB_EVENT_PATH`, `GITHUB_TOKEN`, and the GitHub API.
 6. `vars.AI_REVIEW_AGENT` defaults to `codex` when unset. Any other value (including typos like `codez` or unsupported agents like `claude`/`gemini`) must fail the AI Review check rather than skip the job — silently skipped jobs report success for required status checks, which would reintroduce a merge-bypass path.
 7. `ai-command-policy.yml` must reject AI commands from non-trusted comment authors (must be `OWNER`, `MEMBER`, or `COLLABORATOR`).
 8. After the PR lands, classic branch protection on `main` must require the status checks `baseline-checks`, `guard`, and `AI Review`, with `enforce_admins: true`.

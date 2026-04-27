@@ -53,9 +53,18 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      # Always check out the default branch (trusted base), never the PR's
+      # workspace. The gate scripts are required code: if we ran them from
+      # the PR ref, a contributor could pre-empt the required check by
+      # editing scripts/ai-review-gate.mjs (or any of its dependencies)
+      # in their own PR to short-circuit to success. The gate scripts
+      # only need GITHUB_EVENT_PATH, GITHUB_TOKEN, and the GitHub API —
+      # they never read PR-supplied code, so checking out main is
+      # sufficient and safe.
+      - name: Checkout trusted base
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
 
       - name: Resolve PR context
