@@ -43,6 +43,20 @@ const isHumanCodexTriggerComment = (entry) =>
   !reviewerBotLogins.has(getLogin(entry)) &&
   trustedTriggerAssociations.has(entry?.author_association || "");
 
+// Comments that LOOK like Codex triggers but come from an untrusted
+// human (author_association NOT in trustedTriggerAssociations). The
+// gate must NOT advance its boundary on these (handled in
+// isHumanCodexTriggerComment), AND must NOT pick the Codex bot's
+// reply to them as the latest verdict — Codex Cloud will respond with
+// a "create environment" / "connect account" setup error to any
+// trigger from an unconnected account, and treating that error as
+// authoritative would let an outsider DoS the required check.
+const isUntrustedCodexTriggerComment = (entry) =>
+  isCommentEvent(entry) &&
+  codexTriggerPattern.test(getBody(entry)) &&
+  !reviewerBotLogins.has(getLogin(entry)) &&
+  !trustedTriggerAssociations.has(entry?.author_association || "");
+
 const isCurrentHeadActivationEvent = (entry, headSha) =>
   (entry?.event === "committed" && entry?.sha === headSha) ||
   ((entry?.event === "head_ref_force_pushed" ||
@@ -149,11 +163,32 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     }
   }
 
-  const latestCodexComment =
-    timelineEvents
-      .slice(boundaryIndex + 1)
-      .filter((entry) => isCodexBotComment(entry))
-      .at(-1) || null;
+  // Walk forward from boundaryIndex+1 to pick the latest AUTHORITATIVE
+  // Codex bot comment. A bot comment is authoritative only if no
+  // untrusted `@codex review` trigger appears between the latest
+  // trusted boundary and that bot comment — otherwise the bot comment
+  // is the bot's reply to the untrusted trigger (typically a
+  // "connect account" / "create environment" setup error) and must
+  // NOT be treated as the gate verdict. Once the zone is tainted by
+  // an untrusted trigger, all subsequent bot replies are ignored
+  // until a new trusted trigger advances the boundary (which would
+  // restart this walk on a future invocation).
+  let latestCodexComment = null;
+  let zoneTaintedByUntrustedTrigger = false;
+  for (
+    let index = boundaryIndex + 1;
+    index < timelineEvents.length;
+    index += 1
+  ) {
+    const entry = timelineEvents[index];
+    if (isUntrustedCodexTriggerComment(entry)) {
+      zoneTaintedByUntrustedTrigger = true;
+      continue;
+    }
+    if (isCodexBotComment(entry) && !zoneTaintedByUntrustedTrigger) {
+      latestCodexComment = entry;
+    }
+  }
 
   if (!latestCodexComment) {
     return null;
