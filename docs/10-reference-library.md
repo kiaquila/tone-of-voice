@@ -251,7 +251,7 @@ Why it matters:
 - `depth`: medium
 - `topics`: agents, ai_workflow, cost, setup
 - `best_for`: posts that make a stack, budget, or workflow legible
-- `watch_out`: keep the numbers anchored; do not add generic ROI framing
+- `watch_out`: keep the numbers anchored; do not add generic ROI framing; do not lift the "$124 total" line as an authoritative cost benchmark — it is the author's verbatim self-summary, not an arithmetic sum (see "Note on cost figures" below)
 
 Representative text:
 
@@ -265,6 +265,10 @@ Representative text:
 > - AWS пока использую бесплатный триал на 6 месяцев
 >
 > Итого, примерно 124 доллара в месяц 💸 И бонусная фоточка, подтверждающая, что этот канал пока не захватили ии 😜
+
+Note on cost figures:
+
+- The quoted total ("примерно 124 доллара") is the author's rounded self-summary, kept verbatim because the reference library preserves source text. The itemized list (20 + 100 + 4 + ~20) actually sums to ≈$144 per month excluding the free AWS trial. Treat $124 as voice/style memory only; any draft that needs an accurate cost number must recompute from the line items rather than quote the total.
 
 Why it matters:
 
