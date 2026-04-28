@@ -8,4 +8,4 @@
 - [x] Add `docs/13-drafting-recipes.md`.
 - [x] Update AGENTS, README, roadmap, and product execution plan.
 - [x] Run local validation.
-- [ ] Push the branch, open a PR, and trigger Codex review.
+- [x] Push the branch, open PR #5, and trigger Codex review.
