@@ -56,9 +56,9 @@ Reusable drafting workflows such as:
 - Threads take with narrative arc
 - LinkedIn version with slightly more grounding and less insider shorthand
 
-## Minimal File Design
+## Implemented File Design
 
-Recommended next files when the corpus grows:
+The first growth layer is now implemented as:
 
 - `docs/10-reference-library.md`
 - `docs/11-refresh-log.md`

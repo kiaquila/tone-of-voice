@@ -14,7 +14,12 @@ Before proposing or drafting posts, read in this order:
 4. `docs/02-memory-system.md`
 5. `docs/05-roadmap.md`
 6. `docs/06-delivery-workflow.md`
-7. Any later benchmark or reference-library files added to `docs/`
+7. `docs/07-product-execution-plan.md`
+8. `docs/10-reference-library.md`
+9. `docs/11-refresh-log.md`
+10. `docs/12-stop-list.md`
+11. `docs/13-drafting-recipes.md`
+12. Any later benchmark or reference-library files added to `docs/`
 
 ## What Good Help Looks Like
 
