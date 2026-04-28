@@ -1,4 +1,4 @@
-# Spec — 006 Product Plan And Required Gates
+# Spec — 008 Product Plan And Required Gates
 
 ## Goal
 

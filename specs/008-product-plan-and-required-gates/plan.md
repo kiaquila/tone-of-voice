@@ -1,4 +1,4 @@
-# Plan — 006 Product Plan And Required Gates
+# Plan — 008 Product Plan And Required Gates
 
 ## Approach
 

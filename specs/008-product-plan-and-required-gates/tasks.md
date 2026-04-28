@@ -1,4 +1,4 @@
-# Tasks — 006 Product Plan And Required Gates
+# Tasks — 008 Product Plan And Required Gates
 
 - [x] Add the canonical numbered product execution plan.
 - [x] Update AGENTS, README, roadmap, and delivery workflow docs to reference the plan and the live review gate.

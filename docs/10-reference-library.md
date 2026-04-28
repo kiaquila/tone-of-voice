@@ -16,7 +16,7 @@ Use this file together with:
 
 Each entry uses this structure:
 
-- `platform`: Telegram, Threads, LinkedIn
+- `platform`: telegram, threads, linkedin
 - `post_type`: reaction, field_note, tool_breakdown, opinion, project_update, community, personal, practical_advice, teaser
 - `mood`: playful, sharp, curious, practical, lightly_vulnerable, contrarian, proud, lightly_sharp, confident, direct, encouraging, amused, warm, candid, product_minded, transparent
 - `depth`: quick, medium, deep
@@ -41,7 +41,7 @@ Seeded from a fresh Telegram export of `@vibecodesh`.
 
 ### REF-TG-034 - Community Field Note
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/34
 - `published_at`: 2026-03-22
 - `post_type`: community, field_note
@@ -65,7 +65,7 @@ Why it matters:
 
 ### REF-TG-084 - Compact Practice Lesson
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/84
 - `published_at`: 2026-04-03
 - `post_type`: opinion, field_note
@@ -89,7 +89,7 @@ Why it matters:
 
 ### REF-TG-088 - Multi-Agent Workflow Authority
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/88
 - `published_at`: 2026-04-04
 - `post_type`: tool_breakdown, opinion
@@ -115,7 +115,7 @@ Why it matters:
 
 ### REF-TG-098 - Beginner Advice With Edge
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/98
 - `published_at`: 2026-04-08
 - `post_type`: opinion, practical_advice
@@ -141,7 +141,7 @@ Why it matters:
 
 ### REF-TG-102 - Contrarian Tool Take
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/102
 - `published_at`: 2026-04-09
 - `post_type`: reaction, opinion, tool_breakdown
@@ -167,7 +167,7 @@ Why it matters:
 
 ### REF-TG-106 - First Project Share
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/106
 - `published_at`: 2026-04-12
 - `post_type`: project_update
@@ -193,7 +193,7 @@ Why it matters:
 
 ### REF-TG-120 - Tool Decision Update
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/120
 - `published_at`: 2026-04-21
 - `post_type`: field_note, tool_breakdown
@@ -219,7 +219,7 @@ Why it matters:
 
 ### REF-TG-129 - Product Meta In The Author's Voice
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/129
 - `published_at`: 2026-04-25
 - `post_type`: project_update, personal
@@ -243,7 +243,7 @@ Why it matters:
 
 ### REF-TG-134 - Setup Cost Breakdown
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/134
 - `published_at`: 2026-04-27
 - `post_type`: tool_breakdown
@@ -274,7 +274,7 @@ Why it matters:
 
 ### REF-TG-137 - Teaser From Research
 
-- `platform`: Telegram
+- `platform`: telegram
 - `source`: https://t.me/vibecodesh/137
 - `published_at`: 2026-04-27
 - `post_type`: field_note, teaser
