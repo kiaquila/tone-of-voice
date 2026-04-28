@@ -17,12 +17,14 @@ Use this file together with:
 Each entry uses this structure:
 
 - `platform`: Telegram, Threads, LinkedIn
-- `post_type`: reaction, field_note, tool_breakdown, opinion, project_update, community, personal
-- `mood`: playful, sharp, curious, practical, lightly_vulnerable, contrarian
+- `post_type`: reaction, field_note, tool_breakdown, opinion, project_update, community, personal, practical_advice, teaser
+- `mood`: playful, sharp, curious, practical, lightly_vulnerable, contrarian, proud, lightly_sharp, confident, direct, encouraging, amused, warm, candid, product_minded, transparent
 - `depth`: quick, medium, deep
-- `topics`: tools, agents, vibe_coding, ai_workflow, career, community, product, personal_brand
+- `topics`: tools, agents, vibe_coding, ai_workflow, career, community, product, personal_brand, engineering_process, codex, claude, gemini, github, learning, cost, infrastructure, ai_review, content_workflow, tone_of_voice, applied_ai, linkedin, personal, setup
 - `best_for`: what kind of future draft should retrieve this example
 - `watch_out`: what not to over-copy from this example
+
+`platform` and `depth` are closed enums. `post_type`, `mood`, and `topics` are open vocabularies — the values listed above are the active set covered by the seed corpus, and new entries may introduce additional values. All values must be lowercase `snake_case` (no spaces, no hyphens) so that future Step-2 retrieval can match on equality without normalization. When adding a new value, append it to the list above in the same commit that introduces the entry.
 
 When drafting, retrieve 3 to 5 entries that match the topic and format. Do not imitate the examples mechanically. Use them to preserve rhythm, confidence, density, and the human angle.
 
@@ -67,7 +69,7 @@ Why it matters:
 - `source`: https://t.me/vibecodesh/84
 - `published_at`: 2026-04-03
 - `post_type`: opinion, field_note
-- `mood`: practical, lightly sharp
+- `mood`: practical, lightly_sharp
 - `depth`: quick
 - `topics`: agents, ai_workflow, engineering_process
 - `best_for`: a concise lesson learned from working with agents
@@ -221,7 +223,7 @@ Why it matters:
 - `source`: https://t.me/vibecodesh/129
 - `published_at`: 2026-04-25
 - `post_type`: project_update, personal
-- `mood`: playful, candid, product-minded
+- `mood`: playful, candid, product_minded
 - `depth`: medium
 - `topics`: product, tone_of_voice, agents, content_workflow
 - `best_for`: explaining this repository/product without sounding like generic SaaS positioning
