@@ -96,6 +96,30 @@ class HasCompleteFeatureMemoryTest(unittest.TestCase):
             self._init_repo_with({"specs/099-demo/spec.md": "ok"})
             self.assertFalse(cfm.has_complete_feature_memory("099-demo"))
 
+    def test_worktree_mode_sees_uncommitted_files(self) -> None:
+        # `--worktree` mode is meant to inspect dirty worktree state, so it
+        # must succeed for files that exist on disk even when they are not
+        # yet committed (or there is no git repo at all).
+        with tempfile.TemporaryDirectory() as td:
+            os.chdir(td)
+            base = Path("specs/099-demo")
+            base.mkdir(parents=True)
+            for name in ("spec.md", "plan.md", "tasks.md"):
+                (base / name).write_text("ok", encoding="utf-8")
+            self.assertTrue(
+                cfm.has_complete_feature_memory("099-demo", use_worktree=True)
+            )
+
+    def test_worktree_mode_incomplete_when_file_missing_on_disk(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            os.chdir(td)
+            base = Path("specs/099-demo")
+            base.mkdir(parents=True)
+            (base / "spec.md").write_text("ok", encoding="utf-8")
+            self.assertFalse(
+                cfm.has_complete_feature_memory("099-demo", use_worktree=True)
+            )
+
 
 class ParseArgsTest(unittest.TestCase):
     def test_defaults(self) -> None:

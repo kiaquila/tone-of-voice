@@ -7,19 +7,28 @@ Two minimal, coupled changes in one PR:
 1. **`pr-guard.yml`** — add `ref: ${{ github.event.pull_request.base.sha }}` to the
    `actions/checkout@v4` step. No other workflow changes.
 
-2. **`scripts/check_feature_memory.py`** — replace `Path("specs/id/file").exists()`
-   with `git cat-file -e <head_ref>:specs/id/file` (exit code 0 = file exists in that
-   tree). The `head_ref` is already available as `args.head_ref` (defaults to `"HEAD"`),
-   so the worktree mode and the CI mode both work without extra plumbing.
+2. **`scripts/check_feature_memory.py`** — `has_complete_feature_memory` gains a
+   `use_worktree` keyword flag that selects the lookup strategy:
+   - `use_worktree=False` (CI / `base_ref head_ref` mode): query the head ref's git
+     tree via `git cat-file -e <head_ref>:specs/id/file`. This works against the
+     trusted-base checkout because the file is read from the head SHA's tree, not
+     the working directory.
+   - `use_worktree=True` (`--worktree` mode): fall back to `Path.exists()` against
+     the working directory, so staged/unstaged files in a dirty worktree are still
+     visible (the original semantics of `--worktree`).
 
 ## Steps
 
 1. Edit `pr-guard.yml`: insert `ref:` line under `actions/checkout@v4 with:`.
-2. Edit `check_feature_memory.py`: update `has_complete_feature_memory` signature and
-   body; update two call sites in `main()` to pass `args.head_ref`.
-3. Add `specs/006-pr-guard-trusted-checkout/{spec,plan,tasks}.md`.
-4. Update `AGENTS.md` with a CI Gate Security section documenting the pin.
-5. Open PR, verify `guard` turns green.
+2. Edit `check_feature_memory.py`: add `use_worktree: bool = False` kw-only flag
+   to `has_complete_feature_memory`; route `Path.exists()` for `use_worktree=True`
+   and `git cat-file` otherwise; thread `args.worktree` through both call sites.
+3. Update `tests/test_check_feature_memory.py`: commit fixture files into a temp
+   git repo for the default-mode tests, and add `--worktree`-mode tests that
+   assert `Path.exists()` semantics (uncommitted files visible).
+4. Add `specs/006-pr-guard-trusted-checkout/{spec,plan,tasks}.md`.
+5. Update `AGENTS.md` with a CI Gate Security section documenting the pin.
+6. Open PR, accept that `guard` stays red on this PR (bootstrap), admin-merge once.
 
 ## Risks
 
@@ -27,8 +36,12 @@ Two minimal, coupled changes in one PR:
   without fixing `Path.exists()`. Codex caught this in review. The `git cat-file` fix
   ships in the same PR.
 - **`git cat-file` availability:** always present in standard GitHub-hosted runners.
-- **Worktree mode unaffected:** `--worktree` path uses `HEAD` as the default head_ref,
-  so `git cat-file -e HEAD:specs/...` works correctly against the dirty worktree.
+- **Worktree mode regression (now fixed):** the first iteration routed `--worktree`
+  through `git cat-file -e HEAD:...` too, which silently broke the "inspect dirty
+  worktree" semantics — staged/unstaged spec files are not in `HEAD`'s tree.
+  Codex flagged it as P1 on the second review round (`scripts/check_feature_memory.py:106`).
+  Fix: `--worktree` mode falls back to `Path.exists()` against the filesystem; CI
+  mode keeps using `git cat-file` against the explicit head_ref.
 - **Bootstrap (accepted):** `guard` runs the script from base, so until this PR lands
   on main it still executes the old `Path.exists()` script. That script cannot see
   the PR-only `specs/006-pr-guard-trusted-checkout/` files in the base checkout, so
