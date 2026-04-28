@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -52,6 +53,9 @@ class FeatureIdsTest(unittest.TestCase):
 class HasCompleteFeatureMemoryTest(unittest.TestCase):
     # WARNING: these tests use os.chdir and are NOT safe for parallel execution
     # (e.g., pytest-xdist). Run with a single worker when using parallelism.
+    #
+    # The function under test resolves files via `git cat-file -e <ref>:<path>`,
+    # so each test must commit its fixture files into a temp git repo.
 
     def setUp(self) -> None:
         self._cwd = Path.cwd()
@@ -59,22 +63,62 @@ class HasCompleteFeatureMemoryTest(unittest.TestCase):
     def tearDown(self) -> None:
         os.chdir(self._cwd)
 
+    @staticmethod
+    def _git(*args: str) -> None:
+        subprocess.run(["git", *args], check=True, capture_output=True)
+
+    def _init_repo_with(self, files: dict[str, str]) -> None:
+        self._git("init", "-q", "-b", "main")
+        self._git("config", "user.email", "test@example.com")
+        self._git("config", "user.name", "Test")
+        for rel, body in files.items():
+            path = Path(rel)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body, encoding="utf-8")
+        self._git("add", ".")
+        self._git("commit", "-q", "-m", "fixture")
+
     def test_complete_when_all_three_files_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            os.chdir(td)
+            self._init_repo_with(
+                {
+                    "specs/099-demo/spec.md": "ok",
+                    "specs/099-demo/plan.md": "ok",
+                    "specs/099-demo/tasks.md": "ok",
+                }
+            )
+            self.assertTrue(cfm.has_complete_feature_memory("099-demo"))
+
+    def test_incomplete_when_missing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            os.chdir(td)
+            self._init_repo_with({"specs/099-demo/spec.md": "ok"})
+            self.assertFalse(cfm.has_complete_feature_memory("099-demo"))
+
+    def test_worktree_mode_sees_uncommitted_files(self) -> None:
+        # `--worktree` mode is meant to inspect dirty worktree state, so it
+        # must succeed for files that exist on disk even when they are not
+        # yet committed (or there is no git repo at all).
         with tempfile.TemporaryDirectory() as td:
             os.chdir(td)
             base = Path("specs/099-demo")
             base.mkdir(parents=True)
             for name in ("spec.md", "plan.md", "tasks.md"):
                 (base / name).write_text("ok", encoding="utf-8")
-            self.assertTrue(cfm.has_complete_feature_memory("099-demo"))
+            self.assertTrue(
+                cfm.has_complete_feature_memory("099-demo", use_worktree=True)
+            )
 
-    def test_incomplete_when_missing_file(self) -> None:
+    def test_worktree_mode_incomplete_when_file_missing_on_disk(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             os.chdir(td)
             base = Path("specs/099-demo")
             base.mkdir(parents=True)
             (base / "spec.md").write_text("ok", encoding="utf-8")
-            self.assertFalse(cfm.has_complete_feature_memory("099-demo"))
+            self.assertFalse(
+                cfm.has_complete_feature_memory("099-demo", use_worktree=True)
+            )
 
 
 class ParseArgsTest(unittest.TestCase):

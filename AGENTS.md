@@ -37,3 +37,10 @@ Do not overwrite the voice snapshot casually. Update it only when there is meani
 ## Delivery Rule
 
 Software changes in this repository should land through pull requests and keep the documented roadmap, feature memory, and delivery workflow in sync.
+
+## CI Gate Security
+
+`pr-guard.yml` is a required merge gate. Its checkout step pins `ref` to
+`github.event.pull_request.base.sha` so the gate script always runs from the
+trusted base branch. Never remove or loosen this pin — doing so lets a PR
+replace the gate script with one that always passes.

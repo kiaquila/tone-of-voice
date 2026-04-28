@@ -54,10 +54,24 @@ def feature_ids(changed_files: list[str]) -> set[str]:
     return ids
 
 
-def has_complete_feature_memory(feature_id: str) -> bool:
-    base = Path("specs") / feature_id
+def has_complete_feature_memory(
+    feature_id: str,
+    head_ref: str = "HEAD",
+    *,
+    use_worktree: bool = False,
+) -> bool:
     required = ("spec.md", "plan.md", "tasks.md")
-    return all((base / name).exists() for name in required)
+    if use_worktree:
+        base = Path("specs") / feature_id
+        return all((base / name).exists() for name in required)
+    for name in required:
+        result = subprocess.run(
+            ["git", "cat-file", "-e", f"{head_ref}:specs/{feature_id}/{name}"],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            return False
+    return True
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -97,7 +111,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     ids = feature_ids(changed_files)
-    valid = next((feature_id for feature_id in ids if has_complete_feature_memory(feature_id)), None)
+    valid = next(
+        (
+            feature_id
+            for feature_id in ids
+            if has_complete_feature_memory(feature_id, args.head_ref, use_worktree=args.worktree)
+        ),
+        None,
+    )
     if valid:
         print(f"Feature-memory guard passed via specs/{valid}/")
         return 0
@@ -107,7 +128,11 @@ def main(argv: list[str] | None = None) -> int:
     if ids:
         print("Observed specs folders:", file=sys.stderr)
         for feature_id in sorted(ids):
-            status = "complete" if has_complete_feature_memory(feature_id) else "incomplete"
+            status = (
+                "complete"
+                if has_complete_feature_memory(feature_id, args.head_ref, use_worktree=args.worktree)
+                else "incomplete"
+            )
             print(f"- {feature_id}: {status}", file=sys.stderr)
     return 1
 
