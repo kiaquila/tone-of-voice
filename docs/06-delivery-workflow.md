@@ -8,7 +8,7 @@ Current required checks:
 
 - `baseline-checks`
 - `guard`
-- `AI Review` (configuration-aware; active Claude review after repository setup)
+- `AI Review` (Codex gate for non-draft pull requests)
 - `osv-scan`
 
 ## What These Checks Do
@@ -36,10 +36,11 @@ Already implemented:
 - CI for Python validation and tests
 - PR guard for docs/spec coverage
 - feature-memory validation script
-- first live PR verification with both checks passing
+- first live PR verification with required checks passing
 - OSV dependency scan for `requirements.txt`
-- Claude-review workflow scaffold with repository-level enablement switch
-- bootstrap skip for the first PR that introduces or changes `ai-review.yml`
+- Codex-only AI review gate for pull requests
+- trusted-comment policy workflow for AI commands
+- classic branch protection on `main` with required checks and admin enforcement
 
 Planned later:
 
@@ -52,21 +53,32 @@ A software PR is considered ready for review when:
 
 - `baseline-checks` is green
 - `guard` is green
+- `AI Review` is green
 - `osv-scan` is green
 - docs reflect behavior or workflow changes
 - the active `specs/<feature-id>/` folder is complete
 
-When Claude review is enabled for the repository:
+Branch protection on `main` currently requires:
 
-- `AI Review` is green
+- `baseline-checks`
+- `guard`
+- `AI Review`
+- `osv-scan`
 
-Bootstrap note:
+Branch protection settings:
 
-- if a PR introduces or changes `.github/workflows/ai-review.yml`, the `AI Review` check will skip Claude execution and pass with an explanatory summary
-- this avoids the GitHub validation trap where a review workflow cannot fully review the same PR that first introduces it
+- `strict: false`
+- `enforce_admins: true`
+
+AI Review notes:
+
+- the repository is codex-only for AI review
+- the gate runs from the trusted base branch, not the PR workspace
+- unsupported `AI_REVIEW_AGENT` values fail closed
+- trusted human associations for AI command triggers are `OWNER`, `MEMBER`, and `COLLABORATOR`
 
 ## Notes For Future Sessions
 
 - Treat this file as the canonical summary of what delivery automation is already active.
 - If a future session adds AI review or deploy automation, update this file in the same PR.
-- Claude review activation requires repository configuration, not just workflow files.
+- If branch protection changes, update this file in the same PR and verify with `gh api`.

@@ -31,14 +31,15 @@ Already completed:
 - baseline CI workflow
 - PR guard workflow
 - OSV scan workflow
-- Claude-review workflow scaffold
+- Codex AI-review gate on pull requests
+- classic branch protection on `main`
+- reference library, refresh log, stop-list, and drafting recipes
 
 Next recommended steps:
 
-- reference library and refresh log
-- draft-versus-final feedback schema
-- edit-distance and revision-quality metrics
-- Telegram bot interface
+- execute `docs/07-product-execution-plan.md` from Step 2 onward
+- ship a local drafting MVP before the Telegram bot
+- add feedback capture, evals, and only then the phone workflow
 
 ## Product Principles
 
@@ -84,6 +85,8 @@ Status:
 
 ### Phase 2 — Reference Library And Refresh Loop
 
+Status: complete
+
 Goals:
 
 - store curated examples by post type and mood
@@ -96,7 +99,16 @@ Deliverables:
 - refresh log
 - stop-list and drafting recipes
 
+Status notes:
+
+- `docs/10-reference-library.md` seeded from a 52-post Telegram export
+- `docs/11-refresh-log.md` records the first refresh decision
+- `docs/12-stop-list.md` documents anti-patterns and safer replacements
+- `docs/13-drafting-recipes.md` defines first reusable drafting workflows
+
 ### Phase 3 — Feedback And Eval Loop
+
+Status: planned
 
 Goals:
 
@@ -113,6 +125,8 @@ Deliverables:
 
 ### Phase 4 — Telegram Bot Assistant
 
+Status: planned
+
 Goals:
 
 - let Kristina create drafts from a phone
@@ -128,6 +142,8 @@ Deliverables:
 
 ### Phase 5 — Cross-Platform Expansion
 
+Status: planned
+
 Goals:
 
 - include Threads and LinkedIn in both memory and drafting
@@ -141,11 +157,18 @@ Deliverables:
 
 ## Near-Term Execution Order
 
-1. Finish Telegram ingestion foundation.
-2. Add reference-library structure and refresh log.
-3. Add draft-versus-final feedback storage and edit metrics.
-4. Ship the Telegram bot interface.
-5. Expand to Threads and LinkedIn ingestion workflows.
+Canonical step-by-step plan:
+
+- `docs/07-product-execution-plan.md`
+
+Execution order:
+
+1. Step 1 - Reference Library And Refresh Loop - complete
+2. Step 2 - Local Drafting MVP - next
+3. Step 3 - Feedback Capture And Edit Metrics
+4. Step 4 - Regression Eval Gate
+5. Step 5 - Telegram Bot Product
+6. Step 6 - Cross-Platform Expansion
 
 ## Spec Pattern
 

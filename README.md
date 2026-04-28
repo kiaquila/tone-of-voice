@@ -45,6 +45,11 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - `docs/04-platform-adaptation.md` — how the voice should bend by platform
 - `docs/05-roadmap.md` — phased path toward a self-improving writing assistant
 - `docs/06-delivery-workflow.md` — CI, guardrails, and PR delivery contract
+- `docs/07-product-execution-plan.md` — canonical numbered implementation plan toward the full product
+- `docs/10-reference-library.md` — curated tagged examples for retrieval before drafting
+- `docs/11-refresh-log.md` — dated source refreshes and snapshot-update decisions
+- `docs/12-stop-list.md` — language and drafting moves that flatten the voice
+- `docs/13-drafting-recipes.md` — repeatable workflows for platform-specific drafts
 - `specs/` — lightweight feature memory for software changes
 - `src/` — reusable implementation modules
 - `scripts/` — CLI entrypoints for ingestion and analysis
@@ -52,6 +57,8 @@ This repository is not a one-off prompt dump. It is durable memory for:
 ## Current Decision
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
+
+The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 1 is complete, so a new session should be able to continue with a prompt such as: `Execute Step 2 from docs/07-product-execution-plan.md in tone-of-voice.`
 
 ## First Working Commands
 
