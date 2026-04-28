@@ -47,6 +47,13 @@ Two minimal, coupled changes in one PR:
   the PR-only `specs/006-pr-guard-trusted-checkout/` files in the base checkout, so
   `guard` will fail on this PR. Merge with admin-bypass once; subsequent PRs run the
   new git-tree-based script and need no bypass.
+- **Fork PRs need explicit head fetch (now fixed):** `actions/checkout@v4 + ref:
+  base.sha + fetch-depth: 0` only fetches `refs/heads/*` of the BASE repo. For PRs
+  from forks, the head commit lives in the fork (and only in `refs/pull/<n>/head`
+  on the base repo), so `git diff` and `git cat-file` fail with missing-object
+  errors. Codex P1 finding on round 3 (`pr-guard.yml:20`). Fix: an extra
+  `Fetch PR head ref` step pulls `+refs/pull/<n>/head:refs/remotes/origin/pr/<n>`
+  before any diff or cat-file step runs, and asserts the head SHA is reachable.
 - **Test fixtures must commit to git:** because `has_complete_feature_memory` now
   resolves files via `git cat-file`, `HasCompleteFeatureMemoryTest` initialises a
   temp git repo and commits the fixture files. Otherwise the disk-only fixtures

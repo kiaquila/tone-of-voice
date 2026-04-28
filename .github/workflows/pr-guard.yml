@@ -20,6 +20,23 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
 
+      - name: Fetch PR head ref
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # `actions/checkout@v4 + ref: base.sha + fetch-depth: 0` populates only
+          # the base repo's refs/heads/*, so for PRs from forks the PR head
+          # commit is not in the local clone and `git diff/cat-file` would fail
+          # with missing-object errors. Pull the PR head explicitly via the
+          # GitHub-maintained `refs/pull/<n>/head` ref, which exists for all PRs
+          # (same-repo and fork) and resolves to the head SHA.
+          git fetch --no-tags --no-recurse-submodules origin \
+            "+refs/pull/${PR_NUMBER}/head:refs/remotes/origin/pr/${PR_NUMBER}"
+          git cat-file -e "${HEAD_SHA}^{commit}"
+
       - name: Check docs coverage for tracked changes
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}

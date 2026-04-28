@@ -11,6 +11,9 @@
 - [x] Thread `args.worktree` through both `main()` call sites of
       `has_complete_feature_memory`
 - [x] Add tests covering `--worktree` mode against an uncommitted-on-disk fixture
+- [x] Add `Fetch PR head ref` step in `pr-guard.yml` that pulls
+      `+refs/pull/<n>/head:refs/remotes/origin/pr/<n>` so the head commit is
+      reachable for fork PRs (Codex P1, round 3)
 - [x] Add `AGENTS.md` CI Gate Security section
 - [x] Add `specs/006-pr-guard-trusted-checkout/{spec,plan,tasks}.md`
 - [x] Accept that `guard` stays red on PR #4 (bootstrap: the gate runs from
