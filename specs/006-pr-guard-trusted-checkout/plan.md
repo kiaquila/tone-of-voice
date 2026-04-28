@@ -29,3 +29,12 @@ Two minimal, coupled changes in one PR:
 - **`git cat-file` availability:** always present in standard GitHub-hosted runners.
 - **Worktree mode unaffected:** `--worktree` path uses `HEAD` as the default head_ref,
   so `git cat-file -e HEAD:specs/...` works correctly against the dirty worktree.
+- **Bootstrap (accepted):** `guard` runs the script from base, so until this PR lands
+  on main it still executes the old `Path.exists()` script. That script cannot see
+  the PR-only `specs/006-pr-guard-trusted-checkout/` files in the base checkout, so
+  `guard` will fail on this PR. Merge with admin-bypass once; subsequent PRs run the
+  new git-tree-based script and need no bypass.
+- **Test fixtures must commit to git:** because `has_complete_feature_memory` now
+  resolves files via `git cat-file`, `HasCompleteFeatureMemoryTest` initialises a
+  temp git repo and commits the fixture files. Otherwise the disk-only fixtures
+  produce false negatives.
