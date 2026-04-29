@@ -58,6 +58,10 @@ class BotCommandTest(unittest.TestCase):
             ("/draft", "foo", True),
         )
 
+    def test_split_command_handles_arbitrary_whitespace(self) -> None:
+        self.assertEqual(split_command("/draft\nidea body"), ("/draft", "idea body", True))
+        self.assertEqual(split_command("/revise\tshorter please"), ("/revise", "shorter please", True))
+
     def test_splits_long_messages(self) -> None:
         chunks = split_for_telegram("x" * 8200, limit=3900)
         self.assertEqual(len(chunks), 3)

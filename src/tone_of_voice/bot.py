@@ -204,7 +204,7 @@ class TelegramDraftAssistant:
             return ("Send the idea after /draft, for example:\n/draft short note about the bot MVP",)
 
         existing = self.store.load(chat_id)
-        if existing and existing.draft:
+        if existing and existing.draft and existing.status != "approved":
             return (
                 "You already have an active draft. Send /cancel to discard it, "
                 "or /revise <instruction> to refine it.",
@@ -384,7 +384,7 @@ async def run_telegram_bot(
         timeout=timeout,
     )
 
-    client = TelegramClient(session_stem, api_id, api_hash)
+    client = TelegramClient(session_stem, api_id, api_hash, sequential_updates=True)
     await client.start(bot_token=bot_token)
     me = await client.get_me()
     bot_username = getattr(me, "username", None)
@@ -444,12 +444,14 @@ def split_command(
 ) -> tuple[str | None, str, bool]:
     if not text.startswith("/"):
         return None, text, True
-    first, _, rest = text.partition(" ")
+    parts = text.split(None, 1)
+    first = parts[0]
+    rest = parts[1].strip() if len(parts) > 1 else ""
     base, _, mention = first.partition("@")
     command = base.lower()
     if mention and bot_username and mention.lower() != bot_username.lower():
-        return command, rest.strip(), False
-    return command, rest.strip(), True
+        return command, rest, False
+    return command, rest, True
 
 
 def format_draft_response(result: DraftResult, *, intro: str) -> tuple[str, ...]:
