@@ -99,4 +99,4 @@ Do not over-design the taxonomy early. Add a tag when it helps describe a repeat
 
 ## How Future Evals Use This
 
-Step 4 should build the first eval slice from real records in this storage shape. The eval gate should read analysis files for metrics and raw files only when it needs the paired texts.
+The regression eval gate can promote selected records from this storage shape into committed eval cases. Read analysis files for metrics and raw files only when the paired texts are deliberately being added to an eval suite.

@@ -117,7 +117,7 @@ Teach the system from Kristina's edits instead of only from source posts.
 
 ## Step 4 - Regression Eval Gate
 
-Status: next
+Status: complete
 
 ### Goal
 
@@ -142,9 +142,17 @@ Prevent silent quality drift when prompts, rules, or drafting logic change.
 - the repo has a written threshold for acceptable movement in metrics
 - future prompt tuning can happen with less guesswork
 
+### Status Notes
+
+- `scripts/run_regression_evals.py` runs the default offline suite at `evals/regression/step4-seed.json`.
+- The eval runner checks draft-to-final edit distance, rule-level phrase failures, and prompt assembly contracts for cases with requests.
+- The seed suite is intentionally small and mirrors the Step 3 feedback example until real feedback records are deliberately promoted into committed eval cases.
+- CI runs the eval slice on pushes to `main` and on PRs touching drafting logic, feedback metrics, eval code, eval suites, or core voice-memory docs.
+- `docs/15-regression-evals.md` documents thresholds and maintenance.
+
 ## Step 5 - Telegram Bot Product
 
-Status: planned
+Status: next
 
 ### Goal
 

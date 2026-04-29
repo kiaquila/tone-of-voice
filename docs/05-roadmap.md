@@ -36,11 +36,12 @@ Already completed:
 - reference library, refresh log, stop-list, and drafting recipes
 - local drafting MVP with structured JSON requests, reference retrieval, prompt artifacts, and OpenAI Responses API generation
 - feedback capture and edit metrics with raw/analysis storage and summary scripts
+- offline regression eval gate for drafting, feedback, eval, and core voice-memory changes
 
 Next recommended steps:
 
-- execute `docs/07-product-execution-plan.md` from Step 4 onward
-- add evals before the phone workflow
+- execute `docs/07-product-execution-plan.md` from Step 5 onward
+- build the Telegram bot product now that local drafting, feedback capture, and eval guardrails exist
 
 ## Product Principles
 
@@ -109,7 +110,7 @@ Status notes:
 
 ### Phase 3 — Feedback And Eval Loop
 
-Status: feedback capture complete; eval gate planned
+Status: complete
 
 Goals:
 
@@ -121,18 +122,19 @@ Deliverables:
 
 - feedback schema - complete
 - edit diff storage - complete
-- offline eval set - planned for Step 4
-- regression gate for prompt or rule changes - planned for Step 4
+- offline eval set - complete
+- regression gate for prompt or rule changes - complete
 
 Status notes:
 
 - `scripts/capture_feedback.py` stores manual draft/final pairs under `data/working/feedback/raw/`.
 - `scripts/summarize_feedback.py` aggregates edit-distance metrics and correction tags from `data/working/feedback/analysis/`.
-- `docs/14-feedback-capture.md` documents the storage schema that Step 4 should use for evals.
+- `docs/14-feedback-capture.md` documents the storage schema that evals can draw from.
+- `docs/15-regression-evals.md` documents the first offline eval gate.
 
 ### Phase 4 — Telegram Bot Assistant
 
-Status: planned
+Status: next
 
 Goals:
 
@@ -173,8 +175,8 @@ Execution order:
 1. Step 1 - Reference Library And Refresh Loop - complete
 2. Step 2 - Local Drafting MVP - complete
 3. Step 3 - Feedback Capture And Edit Metrics - complete
-4. Step 4 - Regression Eval Gate - next
-5. Step 5 - Telegram Bot Product
+4. Step 4 - Regression Eval Gate - complete
+5. Step 5 - Telegram Bot Product - next
 6. Step 6 - Cross-Platform Expansion
 
 ## Spec Pattern

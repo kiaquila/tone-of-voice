@@ -53,7 +53,7 @@ jobs:
           tracked_change=false
           while IFS= read -r f; do
             case "$f" in
-              src/*|src/**/*|scripts/*|scripts/**/*|tests/*|tests/**/*|.github/workflows/*|.github/workflows/**/*|requirements.txt|requirements-dev.txt|pyproject.toml|README.md)
+              src/*|src/**/*|scripts/*|scripts/**/*|tests/*|tests/**/*|.github/workflows/*|.github/workflows/**/*|evals/*|evals/**/*|requirements.txt|requirements-dev.txt|pyproject.toml|README.md)
                 tracked_change=true
                 break
                 ;;

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "name": "step4-seed",
+  "description": "First inspectable regression slice for draft/final quality checks. This seed mirrors the Step 3 example until enough real feedback pairs are committed deliberately.",
+  "minimum_cases": 1,
+  "defaults": {
+    "max_char_percent_changed": 70.0,
+    "max_word_percent_changed": 75.0,
+    "max_rule_failures": 0,
+    "min_prompt_references": 3
+  },
+  "cases": [
+    {
+      "id": "telegram-local-mvp-feedback-seed",
+      "source": "examples/feedback-capture.telegram.json",
+      "platform": "telegram",
+      "post_type": "project_update",
+      "draft_text": "Сейчас пилю локальный MVP для tone of voice. Он уже собирает контекст и помогает писать черновики.",
+      "final_text": "Сейчас допилила локальный MVP для tone of voice. Он уже собирает контекст, подтягивает референсы и помогает писать черновики без ии слопа.\n\nДальше хочу научить его считать, где я правлю тон и структуру. Вот это уже будет интересно 😄",
+      "final_must_contain": [
+        "без ии слопа",
+        "правлю тон и структуру"
+      ],
+      "final_must_not_contain": [
+        "revolutionary",
+        "synergy",
+        "empower"
+      ],
+      "request": {
+        "platform": "telegram",
+        "angle": "Explain that the local tone of voice drafting MVP is ready",
+        "source_notes": "The command takes a structured JSON request, retrieves 3-5 voice references, assembles the prompt from the repo memory, and stores the prompt plus draft artifact locally.",
+        "constraints": [
+          "keep it compact",
+          "sound like a project update, not a launch announcement",
+          "mention that it is still human-in-the-loop"
+        ],
+        "call_to_action": "Ask what kind of first draft request to try next.",
+        "topics": [
+          "tone_of_voice",
+          "agents",
+          "content_workflow"
+        ],
+        "post_type": "project_update",
+        "mood": [
+          "playful",
+          "product_minded"
+        ],
+        "recipe": "project_update_or_launch",
+        "max_references": 5
+      }
+    }
+  ]
+}
