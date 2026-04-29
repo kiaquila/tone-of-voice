@@ -119,7 +119,11 @@ def load_feedback_input(
 ) -> FeedbackInput:
     input_path = Path(path).expanduser().resolve()
     data = json.loads(input_path.read_text(encoding="utf-8"))
-    artifact_path = source_draft_artifact or data.get("source_draft_artifact")
+    artifact_path = _resolve_artifact_path(
+        source_draft_artifact,
+        data.get("source_draft_artifact"),
+        base_dir=input_path.parent,
+    )
     artifact = load_draft_artifact(artifact_path) if artifact_path else None
     return FeedbackInput.from_mapping(
         data,
@@ -479,6 +483,22 @@ def _optional_text(value: Any) -> str | None:
 
 def _dict_or_none(value: Any) -> dict[str, Any] | None:
     return value if isinstance(value, dict) else None
+
+
+def _resolve_artifact_path(
+    explicit: str | Path | None,
+    embedded: Any,
+    *,
+    base_dir: Path,
+) -> Path | None:
+    if explicit is not None:
+        return Path(explicit).expanduser()
+    if not embedded:
+        return None
+    embedded_path = Path(str(embedded)).expanduser()
+    if embedded_path.is_absolute():
+        return embedded_path
+    return base_dir / embedded_path
 
 
 def _normalize_token(value: str) -> str:

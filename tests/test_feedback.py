@@ -14,6 +14,7 @@ from tone_of_voice.feedback import (
     format_feedback_summary_markdown,
     levenshtein_distance,
     load_feedback_analyses,
+    load_feedback_input,
     summarize_feedback,
     write_feedback_pair,
 )
@@ -88,6 +89,44 @@ class FeedbackCaptureTest(unittest.TestCase):
         self.assertEqual(feedback.request["platform"], "Telegram")
         self.assertEqual(feedback.request["post_type"], "Project Update")
         self.assertEqual(feedback.request["topics"], ["tone_of_voice"])
+
+    def test_load_feedback_input_resolves_relative_artifact_against_input_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            artifact = {
+                "draft": "draft text",
+                "request": {
+                    "platform": "Telegram",
+                    "post_type": "Project Update",
+                },
+            }
+            (base / "draft.json").write_text(
+                json.dumps(artifact, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            (base / "fb.json").write_text(
+                json.dumps(
+                    {
+                        "source_draft_artifact": "draft.json",
+                        "final_text": "final text",
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tempfile.gettempdir())
+                feedback = load_feedback_input(base / "fb.json")
+            finally:
+                os.chdir(original_cwd)
+
+            self.assertEqual(feedback.platform, "telegram")
+            self.assertEqual(feedback.draft_text, "draft text")
+            self.assertEqual(feedback.post_type, "project_update")
 
     def test_write_feedback_pair_separates_raw_record_and_analysis(self) -> None:
         feedback = FeedbackInput.from_mapping(
