@@ -152,7 +152,7 @@ Prevent silent quality drift when prompts, rules, or drafting logic change.
 
 ## Step 5 - Telegram Bot Product
 
-Status: next
+Status: ready for host smoke test
 
 ### Goal
 
@@ -177,6 +177,15 @@ Turn the local drafting flow into a phone-usable product for day-to-day work.
 - Kristina can send an idea from a phone and receive a draft in Telegram
 - revision requests can loop without losing the original context
 - the deployment is boring enough to trust for regular use
+
+### Status Notes
+
+- `src/tone_of_voice/bot.py` implements the Telegram draft, revise, approve, status, cancel, and help flows.
+- `scripts/run_telegram_bot.py` runs the live Telethon bot.
+- `scripts/smoke_telegram_bot.py` runs the bot draft loop offline in dry-run mode.
+- `docs/16-telegram-bot-product.md` documents runtime env, storage, smoke checks, and recovery.
+- `deploy/systemd/tone-of-voice-telegram-bot.service.example` provides the first host service template.
+- Remaining operator step: configure secrets on the target host and complete a live phone smoke.
 
 ## Step 6 - Cross-Platform Expansion
 
