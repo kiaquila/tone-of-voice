@@ -16,7 +16,7 @@ from tone_of_voice.config import resolve_session_stem
 from tone_of_voice.drafting import (
     DraftRequest,
     build_prompt_bundle,
-    generate_with_openai_responses,
+    generate_with_anthropic_messages,
     write_draft_artifact,
 )
 from tone_of_voice.telegram_export import ensure_telegram_credentials
@@ -333,8 +333,11 @@ def make_draft_generator(
         response_data = None
         backend = "prompt_only"
         if not dry_run:
-            draft, response_data = generate_with_openai_responses(bundle, timeout=timeout)
-            backend = "openai_responses"
+            draft, response_data = generate_with_anthropic_messages(
+                bundle,
+                timeout=timeout,
+            )
+            backend = "anthropic_messages"
 
         artifact_path, prompt_path, _artifact = write_draft_artifact(
             bundle,

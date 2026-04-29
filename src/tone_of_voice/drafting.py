@@ -15,8 +15,10 @@ from tone_of_voice.config import repo_root
 
 
 ALLOWED_PLATFORMS = {"telegram", "threads", "linkedin"}
-DEFAULT_MODEL = "gpt-5.2"
-OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+DEFAULT_MODEL = "claude-sonnet-4-6"
+DEFAULT_ANTHROPIC_MAX_TOKENS = 4096
+ANTHROPIC_API_VERSION = "2023-06-01"
+ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
 
 CONTEXT_DOCS = (
     "docs/00-principles.md",
@@ -338,7 +340,13 @@ def build_prompt_bundle(
         ]
     )
 
-    selected_model = model or request.model or os.getenv("OPENAI_MODEL") or DEFAULT_MODEL
+    selected_model = (
+        model
+        or request.model
+        or os.getenv("TONE_OF_VOICE_ANTHROPIC_MODEL")
+        or os.getenv("ANTHROPIC_MODEL")
+        or DEFAULT_MODEL
+    )
     return PromptBundle(
         request=request,
         model=selected_model,
@@ -348,29 +356,32 @@ def build_prompt_bundle(
     )
 
 
-def generate_with_openai_responses(
+def generate_with_anthropic_messages(
     bundle: PromptBundle,
     *,
     api_key: str | None = None,
     timeout: int = 120,
+    max_tokens: int | None = None,
 ) -> tuple[str, dict[str, Any]]:
-    key = api_key or os.getenv("OPENAI_API_KEY")
+    key = api_key or os.getenv("ANTHROPIC_API_KEY")
     if not key:
         raise RuntimeError(
-            "OPENAI_API_KEY is not set. Re-run with --dry-run to inspect the prompt "
-            "or export OPENAI_API_KEY to generate a draft."
+            "ANTHROPIC_API_KEY is not set. Re-run with --dry-run to inspect the prompt "
+            "or export ANTHROPIC_API_KEY to generate a draft."
         )
 
     payload = {
         "model": bundle.model,
-        "instructions": bundle.system_instructions,
-        "input": bundle.prompt,
+        "max_tokens": max_tokens or anthropic_max_tokens_from_env(),
+        "system": bundle.system_instructions,
+        "messages": [{"role": "user", "content": bundle.prompt}],
     }
     request = urllib.request.Request(
-        OPENAI_RESPONSES_URL,
+        ANTHROPIC_MESSAGES_URL,
         data=json.dumps(payload).encode("utf-8"),
         headers={
-            "Authorization": f"Bearer {key}",
+            "x-api-key": key,
+            "anthropic-version": ANTHROPIC_API_VERSION,
             "Content-Type": "application/json",
         },
         method="POST",
@@ -382,35 +393,49 @@ def generate_with_openai_responses(
     except urllib.error.HTTPError as exc:
         error_body = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(
-            f"OpenAI Responses API returned HTTP {exc.code}: {error_body}"
+            f"Anthropic Messages API returned HTTP {exc.code}: {error_body}"
         ) from exc
     except urllib.error.URLError as exc:
-        raise RuntimeError(f"OpenAI Responses API request failed: {exc}") from exc
+        raise RuntimeError(f"Anthropic Messages API request failed: {exc}") from exc
 
     response_data = json.loads(body)
-    return extract_response_text(response_data), response_data
+    return extract_anthropic_message_text(response_data), response_data
 
 
-def extract_response_text(response_data: dict[str, Any]) -> str:
-    direct = response_data.get("output_text")
-    if isinstance(direct, str) and direct.strip():
-        return direct.strip()
-
+def extract_anthropic_message_text(response_data: dict[str, Any]) -> str:
     chunks: list[str] = []
-    for item in response_data.get("output", []):
+    for item in response_data.get("content", []):
         if not isinstance(item, dict):
             continue
-        for content in item.get("content", []):
-            if not isinstance(content, dict):
-                continue
-            text = content.get("text")
-            if isinstance(text, str) and content.get("type") in {"output_text", "text"}:
-                chunks.append(text)
+        text = item.get("text")
+        if isinstance(text, str) and item.get("type") == "text":
+            chunks.append(text)
 
     text = "\n".join(chunk.strip() for chunk in chunks if chunk.strip()).strip()
     if not text:
-        raise RuntimeError("OpenAI response did not contain output text.")
+        raise RuntimeError("Anthropic response did not contain text content.")
     return text
+
+
+def anthropic_max_tokens_from_env() -> int:
+    raw = (
+        os.getenv("TONE_OF_VOICE_ANTHROPIC_MAX_TOKENS")
+        or os.getenv("ANTHROPIC_MAX_TOKENS")
+        or ""
+    ).strip()
+    if not raw:
+        return DEFAULT_ANTHROPIC_MAX_TOKENS
+
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"ANTHROPIC_MAX_TOKENS must be an integer, got {raw!r}."
+        ) from exc
+
+    if value <= 0:
+        raise RuntimeError("ANTHROPIC_MAX_TOKENS must be greater than zero.")
+    return value
 
 
 def write_draft_artifact(

@@ -87,10 +87,10 @@ Assemble a local draft prompt without calling a model:
 python3 scripts/draft_post.py examples/draft-request.telegram.json --dry-run
 ```
 
-Generate a draft with the OpenAI Responses API:
+Generate a draft with the Anthropic Messages API:
 
 ```bash
-export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
 python3 scripts/draft_post.py examples/draft-request.telegram.json
 ```
 
@@ -122,11 +122,11 @@ Run the Telegram bot:
 
 ```bash
 export TONE_OF_VOICE_TELEGRAM_BOT_TOKEN=...
-export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
 python3 scripts/run_telegram_bot.py --allowed-chat-id <your-chat-id>
 ```
 
-If this repository does not have its own `.env`, the exporter will automatically try to reuse `../vb-influencer/.env` and the sibling Telethon session when available.
+If this repository does not have its own `.env`, the Telegram and drafting commands will automatically try to reuse `../vb-influencer/.env` and the sibling Telethon session when available.
 
 Draft artifacts are written to `data/working/drafts/` by default and are intentionally ignored by git.
 Feedback artifacts are written to `data/working/feedback/` by default and are intentionally ignored by git.

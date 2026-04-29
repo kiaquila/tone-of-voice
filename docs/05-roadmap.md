@@ -34,7 +34,7 @@ Already completed:
 - Codex AI-review gate on pull requests
 - classic branch protection on `main`
 - reference library, refresh log, stop-list, and drafting recipes
-- local drafting MVP with structured JSON requests, reference retrieval, prompt artifacts, and OpenAI Responses API generation
+- local drafting MVP with structured JSON requests, reference retrieval, prompt artifacts, and Anthropic Messages API generation
 - feedback capture and edit metrics with raw/analysis storage and summary scripts
 - offline regression eval gate for drafting, feedback, eval, and core voice-memory changes
 - Telegram bot product implementation with draft, revise, approve, status, cancel, dry-run smoke checks, and operator docs

@@ -5,10 +5,11 @@ import argparse
 import json
 import sys
 
+from tone_of_voice.config import load_project_env
 from tone_of_voice.drafting import (
     DraftRequest,
     build_prompt_bundle,
-    generate_with_openai_responses,
+    generate_with_anthropic_messages,
     write_draft_artifact,
 )
 
@@ -27,8 +28,18 @@ def parse_args() -> argparse.Namespace:
         help="Directory for prompt and draft artifacts.",
     )
     parser.add_argument(
+        "--env-file",
+        help=(
+            "Optional env file path. Defaults to .env or ../vb-influencer/.env "
+            "if present."
+        ),
+    )
+    parser.add_argument(
         "--model",
-        help="Model override. Defaults to request.model, OPENAI_MODEL, or gpt-5.2.",
+        help=(
+            "Model override. Defaults to request.model, "
+            "TONE_OF_VOICE_ANTHROPIC_MODEL, ANTHROPIC_MODEL, or claude-sonnet-4-6."
+        ),
     )
     parser.add_argument(
         "--dry-run",
@@ -39,7 +50,7 @@ def parse_args() -> argparse.Namespace:
         "--timeout",
         type=int,
         default=120,
-        help="OpenAI API timeout in seconds.",
+        help="Anthropic API timeout in seconds.",
     )
     return parser.parse_args()
 
@@ -53,6 +64,7 @@ def load_request(path: str) -> DraftRequest:
 
 def main() -> int:
     args = parse_args()
+    load_project_env(args.env_file)
     request = load_request(args.request)
     bundle = build_prompt_bundle(request, model=args.model)
 
@@ -60,11 +72,11 @@ def main() -> int:
     response_data = None
     backend = "prompt_only"
     if not args.dry_run:
-        draft, response_data = generate_with_openai_responses(
+        draft, response_data = generate_with_anthropic_messages(
             bundle,
             timeout=args.timeout,
         )
-        backend = "openai_responses"
+        backend = "anthropic_messages"
 
     artifact_path, prompt_path, artifact = write_draft_artifact(
         bundle,
@@ -86,7 +98,10 @@ def main() -> int:
         print(draft)
     else:
         print("")
-        print("Dry run complete. Export OPENAI_API_KEY and rerun without --dry-run to generate a draft.")
+        print(
+            "Dry run complete. Export ANTHROPIC_API_KEY and rerun without --dry-run "
+            "to generate a draft."
+        )
 
     return 0
 

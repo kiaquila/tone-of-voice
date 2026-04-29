@@ -53,7 +53,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        help="Model override. Defaults to request.model, OPENAI_MODEL, or the drafting default.",
+        help=(
+            "Model override. Defaults to request.model, "
+            "TONE_OF_VOICE_ANTHROPIC_MODEL, ANTHROPIC_MODEL, or the drafting default."
+        ),
     )
     parser.add_argument(
         "--dry-run",
@@ -64,7 +67,7 @@ def parse_args() -> argparse.Namespace:
         "--timeout",
         type=int,
         default=120,
-        help="OpenAI API timeout in seconds.",
+        help="Anthropic API timeout in seconds.",
     )
     return parser.parse_args()
 

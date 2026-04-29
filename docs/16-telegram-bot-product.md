@@ -39,7 +39,7 @@ python3 scripts/run_telegram_bot.py --session-dir /srv/tone-of-voice/sessions
 python3 scripts/run_telegram_bot.py --output-dir /srv/tone-of-voice/data/bot
 ```
 
-Dry run mode writes prompt artifacts without calling OpenAI. It is useful for host smoke checks and bot-token validation.
+Dry run mode writes prompt artifacts without calling Anthropic. It is useful for host smoke checks and bot-token validation.
 
 The runner refuses to start without an allowlist. Either pass `--allowed-chat-id <id>`, set `TONE_OF_VOICE_BOT_ALLOWED_CHAT_IDS=<id1>,<id2>`, or pass `--allow-public` to explicitly opt out (only sensible for short-lived smoke tests with a unique bot username).
 
@@ -53,11 +53,14 @@ Required for Telegram:
 
 Required for live generation:
 
-- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
 
 Optional:
 
-- `OPENAI_MODEL`
+- `TONE_OF_VOICE_ANTHROPIC_MODEL`
+- `ANTHROPIC_MODEL`
+- `TONE_OF_VOICE_ANTHROPIC_MAX_TOKENS`
+- `ANTHROPIC_MAX_TOKENS`
 - `TONE_OF_VOICE_BOT_ALLOWED_CHAT_IDS`, comma-separated
 - `TELEGRAM_SESSION_NAME`
 - `TONE_OF_VOICE_FALLBACK_ENV`
@@ -102,12 +105,12 @@ Host smoke before enabling systemd:
 python3 scripts/run_telegram_bot.py --dry-run --allowed-chat-id <your-chat-id>
 ```
 
-Then send `/draft smoke test for the bot` to the bot. The expected result is a dry-run reply with artifact paths and no OpenAI call.
+Then send `/draft smoke test for the bot` to the bot. The expected result is a dry-run reply with artifact paths and no Anthropic call.
 
 ## Failure Recovery
 
 - If the bot cannot start, check `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, and bot token env vars first.
-- If generation fails, confirm `OPENAI_API_KEY` and rerun with `--dry-run` to separate prompt assembly from model access.
+- If generation fails, confirm `ANTHROPIC_API_KEY` and rerun with `--dry-run` to separate prompt assembly from model access.
 - If the bot gets stuck in a stale draft, send `/cancel`.
 - If systemd restarts repeatedly, inspect the journal and run the offline smoke check from the same checkout and env file.
 
