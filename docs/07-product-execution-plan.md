@@ -82,7 +82,7 @@ Make the repository usable from a laptop: idea in, platform selected, draft out.
 
 ## Step 3 - Feedback Capture And Edit Metrics
 
-Status: next
+Status: complete
 
 ### Goal
 
@@ -107,9 +107,17 @@ Teach the system from Kristina's edits instead of only from source posts.
 - the repository can compute trends such as edit distance and recurring tone fixes
 - the feedback storage is stable enough to become the basis for evals
 
+### Status Notes
+
+- `scripts/capture_feedback.py` accepts a manual JSON feedback record and optionally reuses a local draft artifact from Step 2.
+- Raw feedback records are written to `data/working/feedback/raw/`.
+- Normalized analysis records are written to `data/working/feedback/analysis/`.
+- `scripts/summarize_feedback.py` reports aggregate edit-distance metrics, platform/post type counts, recent records, and common tone correction tags.
+- `docs/14-feedback-capture.md` documents the schema and workflow.
+
 ## Step 4 - Regression Eval Gate
 
-Status: planned
+Status: next
 
 ### Goal
 

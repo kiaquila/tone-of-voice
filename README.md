@@ -19,6 +19,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - tagged reference examples
 - refresh notes based on newly published content
 - generation workflows for drafting new posts on demand
+- feedback capture from draft-to-final edits
 
 ## Initial Scope
 
@@ -50,7 +51,9 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - `docs/11-refresh-log.md` — dated source refreshes and snapshot-update decisions
 - `docs/12-stop-list.md` — language and drafting moves that flatten the voice
 - `docs/13-drafting-recipes.md` — repeatable workflows for platform-specific drafts
+- `docs/14-feedback-capture.md` — storage schema and workflow for draft/final feedback pairs
 - `examples/draft-request.telegram.json` — sample structured input for the local drafting MVP
+- `examples/feedback-capture.telegram.json` — sample manual feedback input
 - `specs/` — lightweight feature memory for software changes
 - `src/` — reusable implementation modules
 - `scripts/` — CLI entrypoints for ingestion and analysis
@@ -59,7 +62,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
 
-The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 2 is complete, so a new session should be able to continue with a prompt such as: `Execute Step 3 from docs/07-product-execution-plan.md in tone-of-voice.`
+The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 3 is complete, so a new session should be able to continue with a prompt such as: `Execute Step 4 from docs/07-product-execution-plan.md in tone-of-voice.`
 
 ## First Working Commands
 
@@ -88,6 +91,19 @@ export OPENAI_API_KEY=...
 python3 scripts/draft_post.py examples/draft-request.telegram.json
 ```
 
+Capture a draft/final feedback pair:
+
+```bash
+python3 scripts/capture_feedback.py examples/feedback-capture.telegram.json
+```
+
+Summarize feedback metrics:
+
+```bash
+python3 scripts/summarize_feedback.py
+```
+
 If this repository does not have its own `.env`, the exporter will automatically try to reuse `../vb-influencer/.env` and the sibling Telethon session when available.
 
 Draft artifacts are written to `data/working/drafts/` by default and are intentionally ignored by git.
+Feedback artifacts are written to `data/working/feedback/` by default and are intentionally ignored by git.

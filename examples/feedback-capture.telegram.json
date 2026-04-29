@@ -1,0 +1,15 @@
+{
+  "platform": "telegram",
+  "draft_text": "Сейчас пилю локальный MVP для tone of voice. Он уже собирает контекст и помогает писать черновики.",
+  "approved_draft_text": "Сейчас пилю локальный MVP для tone of voice. Он уже собирает контекст и помогает писать черновики.",
+  "edited_text": "Сейчас допилила локальный MVP для tone of voice. Он уже собирает контекст, подтягивает референсы и помогает писать черновики без ии слопа.",
+  "final_text": "Сейчас допилила локальный MVP для tone of voice. Он уже собирает контекст, подтягивает референсы и помогает писать черновики без ии слопа.\n\nДальше хочу научить его считать, где я правлю тон и структуру. Вот это уже будет интересно 😄",
+  "published_url": "https://t.me/vibecodesh/example",
+  "published_at": "2026-04-29T12:00:00Z",
+  "post_type": "project_update",
+  "topics": ["tone_of_voice", "content_workflow", "agents"],
+  "mood": ["playful", "product_minded"],
+  "tone_corrections": ["stronger_hook", "less_generic", "add_human_wink"],
+  "structural_notes": ["added concrete next step", "added anti-slop framing"],
+  "notes": "Example only. Replace with a real draft/final pair before using for metrics."
+}

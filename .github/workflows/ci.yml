@@ -39,3 +39,5 @@ jobs:
           python scripts/export_telegram_posts.py --help
           python scripts/build_telegram_metrics.py --help
           python scripts/draft_post.py --help
+          python scripts/capture_feedback.py --help
+          python scripts/summarize_feedback.py --help
