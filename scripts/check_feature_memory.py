@@ -12,6 +12,7 @@ PRODUCT_PREFIXES = (
     "scripts/",
     "tests/",
     ".github/workflows/",
+    "evals/",
 )
 PRODUCT_FILES = {
     "requirements.txt",
@@ -32,13 +33,25 @@ def git_changed_files(base_ref: str, head_ref: str) -> list[str]:
 
 
 def git_changed_files_in_worktree() -> list[str]:
-    result = subprocess.run(
+    tracked = subprocess.run(
         ["git", "diff", "--name-only", "HEAD"],
         check=True,
         capture_output=True,
         text=True,
     )
-    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    paths = {
+        line.strip()
+        for output in (tracked.stdout, untracked.stdout)
+        for line in output.splitlines()
+        if line.strip()
+    }
+    return sorted(paths)
 
 
 def is_product_path(path: str) -> bool:

@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,6 +36,37 @@ jobs:
       - name: Run unit tests
         run: python -m pytest tests
 
+      - name: Run regression eval slice
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          should_run=false
+          if [ "$EVENT_NAME" = "push" ]; then
+            should_run=true
+          else
+            changed="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
+            while IFS= read -r f; do
+              case "$f" in
+                src/tone_of_voice/drafting.py|src/tone_of_voice/feedback.py|src/tone_of_voice/evals.py|scripts/draft_post.py|scripts/capture_feedback.py|scripts/run_regression_evals.py|evals/regression/*|docs/00-principles.md|docs/01-current-voice-snapshot.md|docs/04-platform-adaptation.md|docs/10-reference-library.md|docs/12-stop-list.md|docs/13-drafting-recipes.md)
+                  should_run=true
+                  break
+                  ;;
+              esac
+            done <<< "$changed"
+          fi
+
+          if [ "$should_run" = "false" ]; then
+            echo "No drafting, voice-memory, or eval changes detected; skipping regression eval slice."
+            exit 0
+          fi
+
+          python scripts/run_regression_evals.py
+
       - name: Smoke-check CLI help
         run: |
           python scripts/export_telegram_posts.py --help
@@ -41,3 +74,4 @@ jobs:
           python scripts/draft_post.py --help
           python scripts/capture_feedback.py --help
           python scripts/summarize_feedback.py --help
+          python scripts/run_regression_evals.py --help

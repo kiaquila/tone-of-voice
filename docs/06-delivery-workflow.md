@@ -20,6 +20,7 @@ Runs the minimum validation needed to keep the repository healthy:
 - dependency install
 - Python syntax validation
 - unit tests
+- offline regression eval slice for drafting, eval, feedback, and core voice-memory changes
 - CLI `--help` smoke checks
 
 ### guard
@@ -41,11 +42,11 @@ Already implemented:
 - Codex-only AI review gate for pull requests
 - trusted-comment policy workflow for AI commands
 - classic branch protection on `main` with required checks and admin enforcement
+- regression eval slice inside `baseline-checks`
 
 Planned later:
 
 - deploy workflow for bot/server components
-- eval workflow for draft-versus-final regression checks
 
 ## Definition Of Done For This Stage
 
@@ -80,5 +81,5 @@ AI Review notes:
 ## Notes For Future Sessions
 
 - Treat this file as the canonical summary of what delivery automation is already active.
-- If a future session adds AI review or deploy automation, update this file in the same PR.
+- If a future session changes AI review, eval, or deploy automation, update this file in the same PR.
 - If branch protection changes, update this file in the same PR and verify with `gh api`.

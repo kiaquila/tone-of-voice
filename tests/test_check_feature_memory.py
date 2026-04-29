@@ -22,6 +22,7 @@ class IsProductPathTest(unittest.TestCase):
         self.assertTrue(cfm.is_product_path("scripts/build_telegram_metrics.py"))
         self.assertTrue(cfm.is_product_path("tests/test_metrics.py"))
         self.assertTrue(cfm.is_product_path(".github/workflows/pr-guard.yml"))
+        self.assertTrue(cfm.is_product_path("evals/regression/step4-seed.json"))
 
     def test_tracked_files(self) -> None:
         self.assertTrue(cfm.is_product_path("requirements.txt"))
@@ -48,6 +49,37 @@ class FeatureIdsTest(unittest.TestCase):
 
     def test_ignores_non_specs_paths(self) -> None:
         self.assertEqual(cfm.feature_ids(["docs/05-roadmap.md", "src/foo.py"]), set())
+
+
+class WorktreeChangedFilesTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self._cwd = Path.cwd()
+
+    def tearDown(self) -> None:
+        os.chdir(self._cwd)
+
+    @staticmethod
+    def _git(*args: str) -> None:
+        subprocess.run(["git", *args], check=True, capture_output=True)
+
+    def test_includes_untracked_files(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            os.chdir(td)
+            self._git("init", "-q", "-b", "main")
+            self._git("config", "user.email", "test@example.com")
+            self._git("config", "user.name", "Test")
+            Path("README.md").write_text("before", encoding="utf-8")
+            self._git("add", "README.md")
+            self._git("commit", "-q", "-m", "fixture")
+
+            Path("README.md").write_text("after", encoding="utf-8")
+            Path("evals/regression").mkdir(parents=True)
+            Path("evals/regression/new.json").write_text("{}", encoding="utf-8")
+
+            self.assertEqual(
+                cfm.git_changed_files_in_worktree(),
+                ["README.md", "evals/regression/new.json"],
+            )
 
 
 class HasCompleteFeatureMemoryTest(unittest.TestCase):
