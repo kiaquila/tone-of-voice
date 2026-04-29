@@ -41,6 +41,8 @@ python3 scripts/run_telegram_bot.py --output-dir /srv/tone-of-voice/data/bot
 
 Dry run mode writes prompt artifacts without calling OpenAI. It is useful for host smoke checks and bot-token validation.
 
+The runner refuses to start without an allowlist. Either pass `--allowed-chat-id <id>`, set `TONE_OF_VOICE_BOT_ALLOWED_CHAT_IDS=<id1>,<id2>`, or pass `--allow-public` to explicitly opt out (only sensible for short-lived smoke tests with a unique bot username).
+
 ## Environment
 
 Required for Telegram:
@@ -70,11 +72,13 @@ Default state root:
 data/working/bot/
 ```
 
+The systemd template at `deploy/systemd/tone-of-voice-telegram-bot.service.example` overrides this with `--output-dir /srv/tone-of-voice/data/bot` so production state lives under `/srv` rather than the repo checkout. Adjust the override to match your host layout.
+
 Layout:
 
 - `sessions/chat-<id>.json` stores the active draft session.
-- `history/<timestamp>-chat-<id>.json` stores approved review history.
-- `drafts/` stores prompt and generation artifacts from the drafting pipeline.
+- `history/<timestamp>-chat-<id>-event-<n>-<rand>.json` stores approved review history. The history directory is append-only; rotate or archive externally if it grows too large.
+- `drafts/` stores prompt and generation artifacts from the drafting pipeline. `/cancel` clears the session JSON but leaves draft artifacts in place for audit; remove them manually if no longer needed.
 
 These are working artifacts and should not be committed.
 

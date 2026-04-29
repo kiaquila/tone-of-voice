@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import os
 import re
+import secrets
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
-
-from telethon import TelegramClient, events
 
 from tone_of_voice.config import resolve_session_stem
 from tone_of_voice.drafting import (
@@ -18,6 +19,9 @@ from tone_of_voice.drafting import (
     write_draft_artifact,
 )
 from tone_of_voice.telegram_export import ensure_telegram_credentials
+
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_BOT_OUTPUT_DIR = "data/working/bot"
@@ -96,9 +100,9 @@ class BotStateStore:
     def save(self, session: BotSession) -> Path:
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
         path = self._session_path(session.chat_id)
-        path.write_text(
+        _atomic_write_text(
+            path,
             json.dumps(session.to_dict(), ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
         )
         return path
 
@@ -110,15 +114,25 @@ class BotStateStore:
     def append_review_history(self, session: BotSession) -> Path:
         self.history_dir.mkdir(parents=True, exist_ok=True)
         stamp = compact_stamp()
-        path = self.history_dir / f"{stamp}-chat-{session.chat_id}-event-{len(session.events)}.json"
-        path.write_text(
+        suffix = secrets.token_hex(3)
+        path = (
+            self.history_dir
+            / f"{stamp}-chat-{session.chat_id}-event-{len(session.events)}-{suffix}.json"
+        )
+        _atomic_write_text(
+            path,
             json.dumps(session.to_dict(), ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
         )
         return path
 
     def _session_path(self, chat_id: int) -> Path:
         return self.sessions_dir / f"chat-{chat_id}.json"
+
+
+def _atomic_write_text(path: Path, data: str) -> None:
+    tmp = path.with_name(f"{path.name}.{secrets.token_hex(4)}.tmp")
+    tmp.write_text(data, encoding="utf-8")
+    os.replace(tmp, path)
 
 
 DraftGenerator = Callable[[DraftRequest], DraftResult]
@@ -131,10 +145,12 @@ class TelegramDraftAssistant:
         store: BotStateStore,
         generator: DraftGenerator,
         allowed_chat_ids: set[int] | None = None,
+        bot_username: str | None = None,
     ) -> None:
         self.store = store
         self.generator = generator
         self.allowed_chat_ids = allowed_chat_ids or set()
+        self.bot_username = bot_username
 
     def handle_text(self, chat_id: int, text: str) -> tuple[str, ...]:
         clean = text.strip()
@@ -144,7 +160,9 @@ class TelegramDraftAssistant:
         if self.allowed_chat_ids and chat_id not in self.allowed_chat_ids:
             return ("This bot is not enabled for this chat.",)
 
-        command, body = split_command(clean)
+        command, body, addressed = split_command(clean, bot_username=self.bot_username)
+        if command and not addressed:
+            return ()
 
         if command in {"/start", "/help"}:
             return (help_text(),)
@@ -172,6 +190,13 @@ class TelegramDraftAssistant:
         if not idea:
             return ("Send the idea after /draft, for example:\n/draft short note about the bot MVP",)
 
+        existing = self.store.load(chat_id)
+        if existing and existing.draft:
+            return (
+                "You already have an active draft. Send /cancel to discard it, "
+                "or /revise <instruction> to refine it.",
+            )
+
         request = DraftRequest.from_mapping(
             {
                 "platform": "telegram",
@@ -184,7 +209,11 @@ class TelegramDraftAssistant:
                 "max_references": 5,
             }
         )
-        result = self.generator(request)
+        try:
+            result = self.generator(request)
+        except Exception as exc:  # noqa: BLE001 - surface failure to the user
+            logger.exception("draft generation failed for chat_id=%s", chat_id)
+            return (_format_generator_error("draft", exc),)
         session = BotSession(
             chat_id=chat_id,
             platform=request.platform,
@@ -232,7 +261,11 @@ class TelegramDraftAssistant:
                 "max_references": 5,
             }
         )
-        result = self.generator(request)
+        try:
+            result = self.generator(request)
+        except Exception as exc:  # noqa: BLE001 - surface failure to the user
+            logger.exception("draft revision failed for chat_id=%s", chat_id)
+            return (_format_generator_error("revision", exc),)
         session.draft = result.draft
         session.draft_artifact_path = result.artifact_path
         session.prompt_path = result.prompt_path
@@ -316,8 +349,17 @@ async def run_telegram_bot(
     dry_run: bool = False,
     model: str | None = None,
     allowed_chat_ids: set[int] | None = None,
+    allow_public: bool = False,
     timeout: int = 120,
 ) -> None:
+    from telethon import TelegramClient, events
+
+    if not allowed_chat_ids and not allow_public:
+        raise RuntimeError(
+            "Refusing to start without an allowlist. Pass --allowed-chat-id, set "
+            "TONE_OF_VOICE_BOT_ALLOWED_CHAT_IDS, or pass --allow-public to opt out explicitly."
+        )
+
     api_id, api_hash = ensure_telegram_credentials()
     session_stem = resolve_session_stem(session_name=session_name, session_dir=session_dir)
     output_root = Path(output_dir).expanduser().resolve()
@@ -328,23 +370,34 @@ async def run_telegram_bot(
         model=model,
         timeout=timeout,
     )
+
+    client = TelegramClient(session_stem, api_id, api_hash)
+    await client.start(bot_token=bot_token)
+    me = await client.get_me()
+    bot_username = getattr(me, "username", None)
+
     assistant = TelegramDraftAssistant(
         store=store,
         generator=generator,
         allowed_chat_ids=allowed_chat_ids,
+        bot_username=bot_username,
     )
 
-    client = TelegramClient(session_stem, api_id, api_hash)
+    if allow_public and not allowed_chat_ids:
+        logger.warning(
+            "Telegram bot started in --allow-public mode; any chat that finds @%s will be served.",
+            bot_username or "<unknown>",
+        )
 
     @client.on(events.NewMessage(incoming=True))
     async def on_message(event: Any) -> None:
         text = event.raw_text or ""
         chat_id = int(event.chat_id)
-        for message in assistant.handle_text(chat_id, text):
+        replies = await asyncio.to_thread(assistant.handle_text, chat_id, text)
+        for message in replies:
             for chunk in split_for_telegram(message):
                 await event.respond(chunk)
 
-    await client.start(bot_token=bot_token)
     print(f"Telegram bot running with session: {session_stem}")
     print(f"Bot state root: {output_root}")
     await client.run_until_disconnected()
@@ -373,12 +426,17 @@ def allowed_chat_ids_from_env(extra: list[int] | None = None) -> set[int]:
     return values
 
 
-def split_command(text: str) -> tuple[str | None, str]:
+def split_command(
+    text: str, *, bot_username: str | None = None
+) -> tuple[str | None, str, bool]:
     if not text.startswith("/"):
-        return None, text
+        return None, text, True
     first, _, rest = text.partition(" ")
-    command = first.split("@", 1)[0].lower()
-    return command, rest.strip()
+    base, _, mention = first.partition("@")
+    command = base.lower()
+    if mention and bot_username and mention.lower() != bot_username.lower():
+        return command, rest.strip(), False
+    return command, rest.strip(), True
 
 
 def format_draft_response(result: DraftResult, *, intro: str) -> tuple[str, ...]:
@@ -442,4 +500,11 @@ def utc_now() -> str:
 
 
 def compact_stamp() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+
+
+def _format_generator_error(action: str, exc: Exception) -> str:
+    return (
+        f"Sorry, the {action} call failed: {type(exc).__name__}: {exc}\n"
+        "Try again, or run the bot with --dry-run to isolate prompt assembly from the model call."
+    )

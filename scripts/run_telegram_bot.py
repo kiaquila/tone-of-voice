@@ -44,6 +44,14 @@ def parse_args() -> argparse.Namespace:
         help="Restrict bot usage to this chat id. Can be supplied more than once.",
     )
     parser.add_argument(
+        "--allow-public",
+        action="store_true",
+        help=(
+            "Explicitly opt out of the allowlist. Required when no --allowed-chat-id "
+            "and no TONE_OF_VOICE_BOT_ALLOWED_CHAT_IDS are supplied."
+        ),
+    )
+    parser.add_argument(
         "--model",
         help="Model override. Defaults to request.model, OPENAI_MODEL, or the drafting default.",
     )
@@ -72,6 +80,7 @@ async def main() -> None:
         dry_run=args.dry_run,
         model=args.model,
         allowed_chat_ids=allowed_chat_ids_from_env(args.allowed_chat_id),
+        allow_public=args.allow_public,
         timeout=args.timeout,
     )
 
