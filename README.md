@@ -53,6 +53,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - `docs/13-drafting-recipes.md` — repeatable workflows for platform-specific drafts
 - `docs/14-feedback-capture.md` — storage schema and workflow for draft/final feedback pairs
 - `docs/15-regression-evals.md` — offline regression eval gate for drafting changes
+- `docs/16-telegram-bot-product.md` — Telegram bot usage, operations, and recovery notes
 - `evals/regression/` — committed draft/final eval suites
 - `examples/draft-request.telegram.json` — sample structured input for the local drafting MVP
 - `examples/feedback-capture.telegram.json` — sample manual feedback input
@@ -64,7 +65,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
 
-The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 4 is complete, so a new session should be able to continue with a prompt such as: `Execute Step 5 from docs/07-product-execution-plan.md in tone-of-voice.`
+The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 now has a Telegram bot implementation and should be smoke-tested on the target host before moving fully into cross-platform expansion.
 
 ## First Working Commands
 
@@ -111,8 +112,23 @@ Run the regression eval slice:
 python3 scripts/run_regression_evals.py
 ```
 
+Run an offline Telegram bot smoke check:
+
+```bash
+python3 scripts/smoke_telegram_bot.py
+```
+
+Run the Telegram bot:
+
+```bash
+export TONE_OF_VOICE_TELEGRAM_BOT_TOKEN=...
+export OPENAI_API_KEY=...
+python3 scripts/run_telegram_bot.py --allowed-chat-id <your-chat-id>
+```
+
 If this repository does not have its own `.env`, the exporter will automatically try to reuse `../vb-influencer/.env` and the sibling Telethon session when available.
 
 Draft artifacts are written to `data/working/drafts/` by default and are intentionally ignored by git.
 Feedback artifacts are written to `data/working/feedback/` by default and are intentionally ignored by git.
 Structured eval reports can be written under `data/working/evals/` and are intentionally ignored by git.
+Telegram bot state, review history, and bot draft artifacts are written under `data/working/bot/` by default and are intentionally ignored by git.

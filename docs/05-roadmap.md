@@ -37,11 +37,12 @@ Already completed:
 - local drafting MVP with structured JSON requests, reference retrieval, prompt artifacts, and OpenAI Responses API generation
 - feedback capture and edit metrics with raw/analysis storage and summary scripts
 - offline regression eval gate for drafting, feedback, eval, and core voice-memory changes
+- Telegram bot product implementation with draft, revise, approve, status, cancel, dry-run smoke checks, and operator docs
 
 Next recommended steps:
 
-- execute `docs/07-product-execution-plan.md` from Step 5 onward
-- build the Telegram bot product now that local drafting, feedback capture, and eval guardrails exist
+- smoke-test and enable the Telegram bot on the target AWS host
+- continue `docs/07-product-execution-plan.md` toward Step 6 after the phone workflow is proven
 
 ## Product Principles
 
@@ -134,7 +135,7 @@ Status notes:
 
 ### Phase 4 — Telegram Bot Assistant
 
-Status: next
+Status: ready for host smoke test
 
 Goals:
 
@@ -148,6 +149,13 @@ Deliverables:
 - draft, revise, approve flows
 - publish-ready text handoff
 - deployment and smoke checks
+
+Status notes:
+
+- `scripts/run_telegram_bot.py` runs the Telethon bot process.
+- `scripts/smoke_telegram_bot.py` exercises the draft loop offline in dry-run mode.
+- `docs/16-telegram-bot-product.md` documents env vars, storage, smoke checks, and recovery.
+- Production activation still requires host env configuration and a live phone smoke.
 
 ### Phase 5 — Cross-Platform Expansion
 
@@ -176,8 +184,8 @@ Execution order:
 2. Step 2 - Local Drafting MVP - complete
 3. Step 3 - Feedback Capture And Edit Metrics - complete
 4. Step 4 - Regression Eval Gate - complete
-5. Step 5 - Telegram Bot Product - next
-6. Step 6 - Cross-Platform Expansion
+5. Step 5 - Telegram Bot Product - ready for host smoke test
+6. Step 6 - Cross-Platform Expansion - planned after phone workflow smoke
 
 ## Spec Pattern
 

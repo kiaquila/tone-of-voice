@@ -75,3 +75,5 @@ jobs:
           python scripts/capture_feedback.py --help
           python scripts/summarize_feedback.py --help
           python scripts/run_regression_evals.py --help
+          python scripts/run_telegram_bot.py --help
+          python scripts/smoke_telegram_bot.py --help

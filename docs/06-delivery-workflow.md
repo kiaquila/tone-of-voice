@@ -43,10 +43,11 @@ Already implemented:
 - trusted-comment policy workflow for AI commands
 - classic branch protection on `main` with required checks and admin enforcement
 - regression eval slice inside `baseline-checks`
+- Telegram bot runner and offline smoke check
 
 Planned later:
 
-- deploy workflow for bot/server components
+- automated deploy workflow for bot/server components
 
 ## Definition Of Done For This Stage
 

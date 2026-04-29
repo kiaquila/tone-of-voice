@@ -1,0 +1,15 @@
+[Unit]
+Description=tone-of-voice Telegram drafting bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/tone-of-voice
+EnvironmentFile=/srv/tone-of-voice/.env
+ExecStart=/srv/tone-of-voice/.venv/bin/python scripts/run_telegram_bot.py --output-dir /srv/tone-of-voice/data/bot
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
