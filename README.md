@@ -50,6 +50,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - `docs/11-refresh-log.md` — dated source refreshes and snapshot-update decisions
 - `docs/12-stop-list.md` — language and drafting moves that flatten the voice
 - `docs/13-drafting-recipes.md` — repeatable workflows for platform-specific drafts
+- `examples/draft-request.telegram.json` — sample structured input for the local drafting MVP
 - `specs/` — lightweight feature memory for software changes
 - `src/` — reusable implementation modules
 - `scripts/` — CLI entrypoints for ingestion and analysis
@@ -58,7 +59,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
 
-The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 1 is complete, so a new session should be able to continue with a prompt such as: `Execute Step 2 from docs/07-product-execution-plan.md in tone-of-voice.`
+The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 2 is complete, so a new session should be able to continue with a prompt such as: `Execute Step 3 from docs/07-product-execution-plan.md in tone-of-voice.`
 
 ## First Working Commands
 
@@ -74,4 +75,19 @@ Build metrics from an exported corpus:
 python3 scripts/build_telegram_metrics.py data/raw/telegram/vibecodesh.jsonl
 ```
 
+Assemble a local draft prompt without calling a model:
+
+```bash
+python3 scripts/draft_post.py examples/draft-request.telegram.json --dry-run
+```
+
+Generate a draft with the OpenAI Responses API:
+
+```bash
+export OPENAI_API_KEY=...
+python3 scripts/draft_post.py examples/draft-request.telegram.json
+```
+
 If this repository does not have its own `.env`, the exporter will automatically try to reuse `../vb-influencer/.env` and the sibling Telethon session when available.
+
+Draft artifacts are written to `data/working/drafts/` by default and are intentionally ignored by git.
