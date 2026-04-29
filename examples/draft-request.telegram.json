@@ -1,0 +1,16 @@
+{
+  "platform": "telegram",
+  "angle": "Explain that the local tone of voice drafting MVP is ready",
+  "source_notes": "The command takes a structured JSON request, retrieves 3-5 voice references, assembles the prompt from the repo memory, and stores the prompt plus draft artifact locally.",
+  "constraints": [
+    "keep it compact",
+    "sound like a project update, not a launch announcement",
+    "mention that it is still human-in-the-loop"
+  ],
+  "call_to_action": "Ask what kind of first draft request to try next.",
+  "topics": ["tone_of_voice", "agents", "content_workflow"],
+  "post_type": "project_update",
+  "mood": ["playful", "product_minded"],
+  "recipe": "project_update_or_launch",
+  "max_references": 5
+}

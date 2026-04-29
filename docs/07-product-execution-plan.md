@@ -47,7 +47,7 @@ Create the missing memory layers between the raw Telegram corpus and the current
 
 ## Step 2 - Local Drafting MVP
 
-Status: next
+Status: complete
 
 ### Goal
 
@@ -73,9 +73,16 @@ Make the repository usable from a laptop: idea in, platform selected, draft out.
 - the generated draft keeps enough context to understand which references and rules were used
 - the flow is quick enough that Kristina would realistically use it before asking for a manual rewrite
 
+### Status Notes
+
+- `scripts/draft_post.py` accepts a structured JSON request and supports Telegram, Threads, and LinkedIn.
+- Prompt assembly pulls from the durable voice docs, stop-list, drafting recipes, and selected reference examples.
+- Generated run artifacts preserve the request, context files, selected references, prompt path, backend/model metadata, and draft text when generation runs.
+- `--dry-run` writes inspectable prompt artifacts without requiring model credentials.
+
 ## Step 3 - Feedback Capture And Edit Metrics
 
-Status: planned
+Status: next
 
 ### Goal
 

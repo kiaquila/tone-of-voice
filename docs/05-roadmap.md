@@ -34,12 +34,13 @@ Already completed:
 - Codex AI-review gate on pull requests
 - classic branch protection on `main`
 - reference library, refresh log, stop-list, and drafting recipes
+- local drafting MVP with structured JSON requests, reference retrieval, prompt artifacts, and OpenAI Responses API generation
 
 Next recommended steps:
 
-- execute `docs/07-product-execution-plan.md` from Step 2 onward
-- ship a local drafting MVP before the Telegram bot
-- add feedback capture, evals, and only then the phone workflow
+- execute `docs/07-product-execution-plan.md` from Step 3 onward
+- add feedback capture and edit metrics before evals
+- add evals and only then the phone workflow
 
 ## Product Principles
 
@@ -164,8 +165,8 @@ Canonical step-by-step plan:
 Execution order:
 
 1. Step 1 - Reference Library And Refresh Loop - complete
-2. Step 2 - Local Drafting MVP - next
-3. Step 3 - Feedback Capture And Edit Metrics
+2. Step 2 - Local Drafting MVP - complete
+3. Step 3 - Feedback Capture And Edit Metrics - next
 4. Step 4 - Regression Eval Gate
 5. Step 5 - Telegram Bot Product
 6. Step 6 - Cross-Platform Expansion

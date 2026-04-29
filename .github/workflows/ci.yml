@@ -38,3 +38,4 @@ jobs:
         run: |
           python scripts/export_telegram_posts.py --help
           python scripts/build_telegram_metrics.py --help
+          python scripts/draft_post.py --help
