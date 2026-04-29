@@ -47,7 +47,8 @@ class FeedbackInput:
     ) -> "FeedbackInput":
         request = _dict_or_none(data.get("request"))
         artifact_request = _dict_or_none(draft_artifact.get("request")) if draft_artifact else None
-        request = request or artifact_request
+        if artifact_request:
+            request = {**artifact_request, **(request or {})}
 
         platform = _normalize_token(
             _first_text(

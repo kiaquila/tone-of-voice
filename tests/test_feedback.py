@@ -62,6 +62,33 @@ class FeedbackCaptureTest(unittest.TestCase):
         self.assertEqual(feedback.topics, ("tone_of_voice",))
         self.assertEqual(feedback.tone_corrections, ("less_generic", "stronger_hook"))
 
+    def test_partial_input_request_inherits_missing_artifact_keys(self) -> None:
+        feedback = FeedbackInput.from_mapping(
+            {
+                "request": {"angle": "Sharper opening line"},
+                "final_text": "final text",
+            },
+            draft_artifact={
+                "draft": "draft text",
+                "request": {
+                    "platform": "Telegram",
+                    "post_type": "Project Update",
+                    "topics": ["tone_of_voice"],
+                    "angle": "Original angle",
+                },
+            },
+            source_draft_artifact="draft.json",
+        )
+
+        self.assertEqual(feedback.platform, "telegram")
+        self.assertEqual(feedback.post_type, "project_update")
+        self.assertEqual(feedback.topics, ("tone_of_voice",))
+        assert feedback.request is not None
+        self.assertEqual(feedback.request["angle"], "Sharper opening line")
+        self.assertEqual(feedback.request["platform"], "Telegram")
+        self.assertEqual(feedback.request["post_type"], "Project Update")
+        self.assertEqual(feedback.request["topics"], ["tone_of_voice"])
+
     def test_write_feedback_pair_separates_raw_record_and_analysis(self) -> None:
         feedback = FeedbackInput.from_mapping(
             {
