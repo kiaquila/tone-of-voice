@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import secrets
 import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass
@@ -517,4 +518,5 @@ def _artifact_id(request: DraftRequest, created_at: datetime) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", request.angle.lower()).strip("-")[:40]
     if not slug:
         slug = "draft"
-    return f"{stamp}-{request.platform}-{slug}"
+    suffix = secrets.token_hex(3)
+    return f"{stamp}-{request.platform}-{slug}-{suffix}"

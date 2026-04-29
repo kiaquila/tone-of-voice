@@ -150,6 +150,42 @@ class ArtifactWritingTest(unittest.TestCase):
             self.assertEqual(data["response_id"], "resp_test")
             self.assertEqual(artifact["model"], "test-model")
 
+    def test_consecutive_writes_do_not_collide(self) -> None:
+        request = DraftRequest.from_mapping(
+            {
+                "platform": "telegram",
+                "angle": "MVP shipped",
+                "topics": ["product"],
+                "post_type": "project_update",
+                "max_references": 3,
+            }
+        )
+        bundle = build_prompt_bundle(request, root=repo_root(), model="test-model")
+
+        with tempfile.TemporaryDirectory() as td:
+            first_artifact_path, first_prompt_path, first = write_draft_artifact(
+                bundle, output_dir=td, draft="first", backend="test"
+            )
+            second_artifact_path, second_prompt_path, second = write_draft_artifact(
+                bundle, output_dir=td, draft="second", backend="test"
+            )
+
+            self.assertNotEqual(first["id"], second["id"])
+            self.assertNotEqual(first_artifact_path, second_artifact_path)
+            self.assertNotEqual(first_prompt_path, second_prompt_path)
+            self.assertTrue(first_artifact_path.exists())
+            self.assertTrue(second_artifact_path.exists())
+            self.assertTrue(first_prompt_path.exists())
+            self.assertTrue(second_prompt_path.exists())
+            self.assertEqual(
+                json.loads(first_artifact_path.read_text(encoding="utf-8"))["draft"],
+                "first",
+            )
+            self.assertEqual(
+                json.loads(second_artifact_path.read_text(encoding="utf-8"))["draft"],
+                "second",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
