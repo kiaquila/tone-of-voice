@@ -43,6 +43,21 @@ Do not overwrite the voice snapshot casually. Update it only when there is meani
 
 Software changes in this repository should land through pull requests and keep the documented roadmap, feature memory, and delivery workflow in sync.
 
+## GitHub Freshness Rule
+
+When answering questions about the current repository status, roadmap state, pull requests, branches, CI, or what should happen next, do not rely on local git state alone.
+
+Before answering, refresh and verify GitHub state:
+
+1. Run `git fetch --all --prune`.
+2. Check the relevant PR, branch, or workflow with `gh pr view`, `gh pr list`, `gh run list`, `gh api`, or the GitHub connector when applicable.
+3. Compare local `main` with `origin/main`.
+4. If local state is stale, update it or explicitly say it is stale before drawing conclusions.
+
+Never infer whether a PR is open, merged, or current only from local branches. GitHub is the source of truth for PR state.
+
+If GitHub or `gh` is unavailable, clearly say that the answer is based on local state only.
+
 ## CI Gate Security
 
 `pr-guard.yml` is a required merge gate. Its checkout step pins `ref` to
