@@ -56,6 +56,17 @@ Reusable drafting workflows such as:
 - Threads take with narrative arc
 - LinkedIn version with slightly more grounding and less insider shorthand
 
+### 6. Feedback Pairs
+
+Draft-to-final records that show how generated text changed before publishing:
+
+- generated draft text
+- approved or edited draft text
+- final published text
+- tone correction tags
+- edit-distance metrics
+- structural notes
+
 ## Implemented File Design
 
 The first growth layer is now implemented as:
@@ -64,6 +75,7 @@ The first growth layer is now implemented as:
 - `docs/11-refresh-log.md`
 - `docs/12-stop-list.md`
 - `docs/13-drafting-recipes.md`
+- `docs/14-feedback-capture.md`
 
 ## Retrieval Workflow
 
@@ -74,9 +86,11 @@ When drafting a new post:
 3. Retrieve 3 to 5 relevant reference examples by topic and format.
 4. Draft to the requested angle.
 5. Check against guardrails before finalizing.
+6. After publishing, capture the draft/final pair when the edits teach something repeatable.
 
 ## Update Cadence
 
 - Light refresh: every 10 to 20 new posts
 - Full profile refresh: every noticeable shift in style or platform strategy
 - Platform playbook refresh: whenever one platform starts behaving materially differently
+- Feedback summary review: after every 5 to 10 captured draft/final pairs

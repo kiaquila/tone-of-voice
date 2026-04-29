@@ -35,12 +35,12 @@ Already completed:
 - classic branch protection on `main`
 - reference library, refresh log, stop-list, and drafting recipes
 - local drafting MVP with structured JSON requests, reference retrieval, prompt artifacts, and OpenAI Responses API generation
+- feedback capture and edit metrics with raw/analysis storage and summary scripts
 
 Next recommended steps:
 
-- execute `docs/07-product-execution-plan.md` from Step 3 onward
-- add feedback capture and edit metrics before evals
-- add evals and only then the phone workflow
+- execute `docs/07-product-execution-plan.md` from Step 4 onward
+- add evals before the phone workflow
 
 ## Product Principles
 
@@ -109,7 +109,7 @@ Status notes:
 
 ### Phase 3 — Feedback And Eval Loop
 
-Status: planned
+Status: feedback capture complete; eval gate planned
 
 Goals:
 
@@ -119,10 +119,16 @@ Goals:
 
 Deliverables:
 
-- feedback schema
-- edit diff storage
-- offline eval set
-- regression gate for prompt or rule changes
+- feedback schema - complete
+- edit diff storage - complete
+- offline eval set - planned for Step 4
+- regression gate for prompt or rule changes - planned for Step 4
+
+Status notes:
+
+- `scripts/capture_feedback.py` stores manual draft/final pairs under `data/working/feedback/raw/`.
+- `scripts/summarize_feedback.py` aggregates edit-distance metrics and correction tags from `data/working/feedback/analysis/`.
+- `docs/14-feedback-capture.md` documents the storage schema that Step 4 should use for evals.
 
 ### Phase 4 — Telegram Bot Assistant
 
@@ -166,8 +172,8 @@ Execution order:
 
 1. Step 1 - Reference Library And Refresh Loop - complete
 2. Step 2 - Local Drafting MVP - complete
-3. Step 3 - Feedback Capture And Edit Metrics - next
-4. Step 4 - Regression Eval Gate
+3. Step 3 - Feedback Capture And Edit Metrics - complete
+4. Step 4 - Regression Eval Gate - next
 5. Step 5 - Telegram Bot Product
 6. Step 6 - Cross-Platform Expansion
 
