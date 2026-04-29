@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import secrets
+import threading
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -151,6 +152,16 @@ class TelegramDraftAssistant:
         self.generator = generator
         self.allowed_chat_ids = allowed_chat_ids or set()
         self.bot_username = bot_username
+        self._chat_locks: dict[int, threading.Lock] = {}
+        self._chat_locks_lock = threading.Lock()
+
+    def _chat_lock(self, chat_id: int) -> threading.Lock:
+        with self._chat_locks_lock:
+            lock = self._chat_locks.get(chat_id)
+            if lock is None:
+                lock = threading.Lock()
+                self._chat_locks[chat_id] = lock
+            return lock
 
     def handle_text(self, chat_id: int, text: str) -> tuple[str, ...]:
         clean = text.strip()
@@ -166,24 +177,26 @@ class TelegramDraftAssistant:
 
         if command in {"/start", "/help"}:
             return (help_text(),)
-        if command == "/draft":
-            return self._draft(chat_id, body)
-        if command == "/revise":
-            return self._revise(chat_id, body)
-        if command == "/approve":
-            return self._approve(chat_id)
-        if command == "/status":
-            return self._status(chat_id)
-        if command == "/cancel":
-            self.store.clear(chat_id)
-            return ("Current draft session cleared.",)
-        if command:
-            return (f"Unknown command: {command}\n\n{help_text()}",)
 
-        session = self.store.load(chat_id)
-        if session and session.draft:
-            return self._revise(chat_id, clean)
-        return self._draft(chat_id, clean)
+        with self._chat_lock(chat_id):
+            if command == "/draft":
+                return self._draft(chat_id, body)
+            if command == "/revise":
+                return self._revise(chat_id, body)
+            if command == "/approve":
+                return self._approve(chat_id)
+            if command == "/status":
+                return self._status(chat_id)
+            if command == "/cancel":
+                self.store.clear(chat_id)
+                return ("Current draft session cleared.",)
+            if command:
+                return (f"Unknown command: {command}\n\n{help_text()}",)
+
+            session = self.store.load(chat_id)
+            if session and session.draft:
+                return self._revise(chat_id, clean)
+            return self._draft(chat_id, clean)
 
     def _draft(self, chat_id: int, idea: str) -> tuple[str, ...]:
         idea = idea.strip()

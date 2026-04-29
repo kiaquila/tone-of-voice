@@ -192,6 +192,46 @@ class TelegramDraftAssistantTest(unittest.TestCase):
             self.assertIn("active draft", joined)
             self.assertIn("/cancel", joined)
 
+    def test_concurrent_drafts_for_same_chat_are_serialized(self) -> None:
+        import threading
+        import time
+
+        with tempfile.TemporaryDirectory() as td:
+            store = BotStateStore(td)
+            generator_calls: list[str] = []
+            generator_calls_lock = threading.Lock()
+
+            def slow_generator(request: DraftRequest) -> DraftResult:
+                time.sleep(0.05)
+                with generator_calls_lock:
+                    generator_calls.append(request.angle)
+                return fake_generator(request)
+
+            assistant = TelegramDraftAssistant(store=store, generator=slow_generator)
+
+            t1_result: list[tuple[str, ...]] = []
+            t2_result: list[tuple[str, ...]] = []
+            t1 = threading.Thread(
+                target=lambda: t1_result.append(assistant.handle_text(1, "/draft first"))
+            )
+            t2 = threading.Thread(
+                target=lambda: t2_result.append(assistant.handle_text(1, "/draft second"))
+            )
+            t1.start()
+            t2.start()
+            t1.join(timeout=5)
+            t2.join(timeout=5)
+
+            self.assertFalse(t1.is_alive())
+            self.assertFalse(t2.is_alive())
+
+            replies = [t1_result[0], t2_result[0]]
+            blocked = [r for r in replies if any("active draft" in part for part in r)]
+            accepted = [r for r in replies if r not in blocked]
+            self.assertEqual(len(blocked), 1)
+            self.assertEqual(len(accepted), 1)
+            self.assertEqual(len(generator_calls), 1)
+
     def test_approve_clears_session_so_next_draft_starts_fresh(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             store = BotStateStore(td)
