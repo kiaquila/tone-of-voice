@@ -192,6 +192,24 @@ class TelegramDraftAssistantTest(unittest.TestCase):
             self.assertIn("active draft", joined)
             self.assertIn("/cancel", joined)
 
+    def test_approve_clears_session_so_next_draft_starts_fresh(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            store = BotStateStore(td)
+            assistant = TelegramDraftAssistant(store=store, generator=fake_generator)
+            assistant.handle_text(1, "/draft first idea")
+            assistant.handle_text(1, "/approve")
+
+            self.assertIsNone(store.load(1))
+            self.assertEqual(
+                assistant.handle_text(1, "/status"),
+                ("No active draft session.",),
+            )
+
+            replies = assistant.handle_text(1, "/draft second idea")
+            joined = "\n".join(replies)
+            self.assertIn("draft for second idea", joined)
+            self.assertNotIn("active draft", joined)
+
     def test_cross_bot_mention_is_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             assistant = TelegramDraftAssistant(

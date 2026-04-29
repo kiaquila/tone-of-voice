@@ -283,11 +283,11 @@ class TelegramDraftAssistant:
         session.status = "approved"
         session.approved_at = utc_now()
         session.record_event("draft_approved")
-        self.store.save(session)
         history_path = self.store.append_review_history(session)
+        self.store.clear(chat_id)
         return (
             "Approved for manual handoff.\n"
-            "No auto-publish was triggered.\n"
+            "No auto-publish was triggered. Send /draft to start a new one.\n"
             f"Review history: {history_path}",
         )
 

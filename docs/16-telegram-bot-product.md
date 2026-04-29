@@ -13,9 +13,9 @@ The first release never auto-publishes. Approval only records review history.
 
 ## Commands
 
-- `/draft <idea>` creates a new Telegram draft from the idea.
+- `/draft <idea>` creates a new Telegram draft from the idea. Refuses if you already have an active in-progress draft; send `/cancel` or `/approve` first.
 - `/revise <instruction>` revises the active draft while preserving prior context.
-- `/approve` saves the current draft to review history for manual handoff.
+- `/approve` saves the current draft to review history for manual handoff and clears the active session so the next `/draft` starts fresh.
 - `/status` shows the active session.
 - `/cancel` clears the active session.
 - `/help` lists commands.
