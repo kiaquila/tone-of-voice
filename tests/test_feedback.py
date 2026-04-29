@@ -90,6 +90,19 @@ class FeedbackCaptureTest(unittest.TestCase):
         self.assertEqual(feedback.request["post_type"], "Project Update")
         self.assertEqual(feedback.request["topics"], ["tone_of_voice"])
 
+    def test_explicit_source_draft_artifact_overrides_embedded_path(self) -> None:
+        feedback = FeedbackInput.from_mapping(
+            {
+                "source_draft_artifact": "embedded/draft.json",
+                "platform": "telegram",
+                "draft_text": "draft",
+                "final_text": "final",
+            },
+            source_draft_artifact="/explicit/override.json",
+        )
+
+        self.assertEqual(feedback.source_draft_artifact, "/explicit/override.json")
+
     def test_load_feedback_input_resolves_relative_artifact_against_input_dir(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             base = Path(td)

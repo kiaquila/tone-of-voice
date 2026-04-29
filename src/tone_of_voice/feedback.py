@@ -77,8 +77,8 @@ class FeedbackInput:
         )
 
         source_path = _first_text(
-            data.get("source_draft_artifact"),
             source_draft_artifact,
+            data.get("source_draft_artifact"),
         )
 
         return cls(
