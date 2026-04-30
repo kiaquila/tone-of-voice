@@ -65,7 +65,33 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
 
-The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 now has a Telegram bot implementation and should be smoke-tested on the target host before moving fully into cross-platform expansion.
+The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 now has a production Telegram bot in `Editorial Room`; the next product step is cross-platform expansion.
+
+## Using The Telegram Bot
+
+The production bot is `@vbnews_bot` in the `Editorial Room` Telegram chat. It drafts Telegram-native posts only after an explicit request; it never auto-publishes.
+
+To create a post draft, send:
+
+```text
+/draft <your idea>
+```
+
+In a group chat, mention the bot if Telegram does not route slash commands automatically:
+
+```text
+/draft@vbnews_bot short post about shipping the drafting bot, with a human-in-the-loop angle
+```
+
+After the bot replies with a draft:
+
+- send `/revise <what to change>` to iterate on the active draft
+- send a plain text revision request if a draft is already active
+- send `/approve` to save the draft to review history and clear the active session
+- send `/cancel` to discard the active session
+- send `/status` to see whether a draft is active
+
+Approval is only a handoff marker. Publishing stays manual.
 
 ## First Working Commands
 

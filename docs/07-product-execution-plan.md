@@ -152,7 +152,7 @@ Prevent silent quality drift when prompts, rules, or drafting logic change.
 
 ## Step 5 - Telegram Bot Product
 
-Status: ready for host smoke test
+Status: complete
 
 ### Goal
 
@@ -185,7 +185,8 @@ Turn the local drafting flow into a phone-usable product for day-to-day work.
 - `scripts/smoke_telegram_bot.py` runs the bot draft loop offline in dry-run mode.
 - `docs/16-telegram-bot-product.md` documents runtime env, storage, smoke checks, and recovery.
 - `deploy/systemd/tone-of-voice-telegram-bot.service.example` provides the first host service template.
-- Remaining operator step: configure secrets on the target host and complete a live phone smoke.
+- Production is enabled on the target AWS host as `tone-of-voice-telegram-bot.service`.
+- The first live smoke in `Editorial Room` confirmed both Telegram delivery and Anthropic draft generation.
 
 ## Step 6 - Cross-Platform Expansion
 

@@ -11,6 +11,30 @@ The Telegram bot turns the local drafting MVP into a phone-usable workflow:
 
 The first release never auto-publishes. Approval only records review history.
 
+## Production Chat Workflow
+
+The production bot is `@vbnews_bot` in the `Editorial Room` Telegram chat.
+
+Start a draft with:
+
+```text
+/draft <idea>
+```
+
+In the group chat, use the mentioned command if needed:
+
+```text
+/draft@vbnews_bot <idea>
+```
+
+Good requests include the angle, rough facts, desired mood, and any constraint that should survive into the post. For example:
+
+```text
+/draft@vbnews_bot короткий пост о том, что бот для черновиков запущен; акцент на human-in-the-loop, без пафоса
+```
+
+After a draft exists, use `/revise <instruction>` or send a plain text revision request. Use `/approve` when the draft is ready for manual handoff, or `/cancel` to clear the active draft without saving approval history.
+
 ## Commands
 
 - `/draft <idea>` creates a new Telegram draft from the idea. Refuses if you already have an active in-progress draft; send `/cancel` or `/approve` first.
@@ -117,3 +141,11 @@ Then send `/draft smoke test for the bot` to the bot. The expected result is a d
 ## Systemd
 
 Use `deploy/systemd/tone-of-voice-telegram-bot.service.example` as the starting point for the host unit. Keep the real env file outside git.
+
+Production currently runs as `tone-of-voice-telegram-bot.service` on the same AWS host family as `vb-influencer`. The live service uses:
+
+- working directory: `/srv/tone-of-voice`
+- environment file: `/home/ubuntu/vb-influencer/.env`
+- state root: `/srv/tone-of-voice/data/bot`
+- session directory: `/srv/tone-of-voice/sessions`
+- allowed chat: `Editorial Room`

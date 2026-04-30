@@ -9,4 +9,4 @@
 - [x] Add unit tests for bot behavior.
 - [x] Add operator docs and deployment template.
 - [x] Update roadmap, execution plan, delivery workflow, README, and CI smoke checks.
-- [ ] Run live phone smoke on the production host after bot token and host env are configured.
+- [x] Run live phone smoke on the production host after bot token and host env are configured.
