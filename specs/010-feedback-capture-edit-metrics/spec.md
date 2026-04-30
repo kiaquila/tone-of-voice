@@ -1,6 +1,6 @@
 # Spec - Feedback Capture And Edit Metrics
 
-Execute Step 3 from `docs/07-product-execution-plan.md`: capture draft/final pairs and compute edit metrics so the writing system can learn from Kristina's edits.
+Execute Step 3 from `docs/07-product-execution-plan.md`: capture draft/final pairs and compute edit metrics so the writing system can learn from the author's edits.
 
 ## Scope
 

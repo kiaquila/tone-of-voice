@@ -2,7 +2,7 @@
 
 ## Principle
 
-The voice should remain recognizably Kristina across platforms, but its packaging should adapt to local reading habits and expectations.
+The voice should remain recognizably the author across platforms, but its packaging should adapt to local reading habits and expectations.
 
 ## Telegram
 

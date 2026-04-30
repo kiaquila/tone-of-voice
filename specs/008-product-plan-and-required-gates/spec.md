@@ -31,4 +31,4 @@ Out of scope:
 
 - `docs/07-product-execution-plan.md` exists and can be referenced directly in a new session.
 - `AGENTS.md`, `README.md`, `docs/05-roadmap.md`, and `docs/06-delivery-workflow.md` are consistent with that plan.
-- `gh api repos/kiaquila/tone-of-voice/branches/main/protection --jq '{checks: .required_status_checks.contexts, strict: .required_status_checks.strict, enforce_admins: .enforce_admins.enabled}'` returns the expected required checks and settings.
+- `gh api repos/<your org>/tone-of-voice/branches/main/protection --jq '{checks: .required_status_checks.contexts, strict: .required_status_checks.strict, enforce_admins: .enforce_admins.enabled}'` returns the expected required checks and settings.

@@ -2,11 +2,11 @@
 
 ## Product Goal
 
-Build a self-improving writing system that learns Kristina's style from published content and from draft-to-final edits, so a future interaction can be:
+Build a self-improving writing system that learns the author's style from published content and from draft-to-final edits, so a future interaction can be:
 
 1. send an idea
 2. choose a platform
-3. receive a near-finished post in Kristina's style
+3. receive a near-finished post in the author's style
 4. make fewer edits over time
 
 ## Success Metric
@@ -138,9 +138,9 @@ Status: complete
 
 Goals:
 
-- let Kristina create drafts from a phone
+- let the author create drafts from a phone
 - preserve a tight human-in-the-loop workflow
-- deploy the bot on the same AWS host family used by `vb-influencer`
+- deploy the bot on the same AWS host family used by `<sibling Telegram project>`
 
 Deliverables:
 

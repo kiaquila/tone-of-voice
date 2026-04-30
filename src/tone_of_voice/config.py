@@ -14,9 +14,10 @@ def default_env_candidates() -> list[Path]:
     root = repo_root()
     candidates = [root / ".env"]
 
-    # Allow falling back to a sibling repo (for example, ../vb-influencer/.env)
-    # so the same Telegram credentials can be reused without duplication.
-    fallback = (os.getenv("TONE_OF_VOICE_FALLBACK_ENV") or "").strip() or "../vb-influencer/.env"
+    fallback = (os.getenv("TONE_OF_VOICE_FALLBACK_ENV") or "").strip()
+    if not fallback:
+        return candidates
+
     if Path(fallback).is_absolute():
         fallback_path = Path(fallback)
     else:
@@ -58,15 +59,9 @@ def resolve_session_stem(
     session_name: str | None = None,
     session_dir: str | None = None,
 ) -> str:
-    name = session_name or os.getenv("TELEGRAM_SESSION_NAME", "vb_influencer_session")
+    name = session_name or os.getenv("TELEGRAM_SESSION_NAME", "telegram_session")
 
     if session_dir:
         return str(Path(session_dir).expanduser().resolve() / name)
 
-    root = repo_root()
-    sibling_repo = root.parent / "vb-influencer"
-    sibling_session = sibling_repo / f"{name}.session"
-    if sibling_session.exists():
-        return str(sibling_repo / name)
-
-    return str(root / name)
+    return str(repo_root() / name)

@@ -2,7 +2,7 @@
 
 ## What We Can Reuse Right Now
 
-The existing `vb-influencer` project already proves that Telegram collection via Telethon works in the current local environment.
+The existing `<sibling Telegram project>` project already proves that Telegram collection via Telethon works in the current local environment.
 
 What is already available in practice:
 

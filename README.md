@@ -1,6 +1,6 @@
 # tone-of-voice
 
-Private working repository for capturing, updating, and reusing Kristina's evolving author voice across Telegram, Threads, and LinkedIn.
+Working repository for capturing, updating, and reusing the author's evolving voice across Telegram, Threads, and LinkedIn.
 
 ## Naming
 
@@ -23,9 +23,9 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 ## Initial Scope
 
-- Capture the current `@vibecodesh` tone snapshot
+- Capture the current `<your channel>` tone snapshot
 - Store the first voice-memory architecture
-- Assess reuse of the existing Telethon integration from `vb-influencer`
+- Assess reuse of the existing Telethon integration from `<sibling Telegram project>`
 - Account for channel differences between Telegram, Threads, and LinkedIn
 
 ## Recommended Working Loop
@@ -65,11 +65,11 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
 
-The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 now has a production Telegram bot in `Editorial Room`; the next product step is cross-platform expansion.
+The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 now has a production Telegram bot in `<your group>`; the next product step is cross-platform expansion.
 
 ## Using The Telegram Bot
 
-The production bot is `@vbnews_bot` in the `Editorial Room` Telegram chat. It drafts Telegram-native posts only after an explicit request; it never auto-publishes.
+The production bot is `@<your bot>` in the `<your group>` Telegram chat. It drafts Telegram-native posts only after an explicit request; it never auto-publishes.
 
 To create a post draft, send:
 
@@ -80,7 +80,7 @@ To create a post draft, send:
 In a group chat, mention the bot if Telegram does not route slash commands automatically:
 
 ```text
-/draft@vbnews_bot short post about shipping the drafting bot, with a human-in-the-loop angle
+/draft@<your bot> short post about shipping the drafting bot, with a human-in-the-loop angle
 ```
 
 After the bot replies with a draft:
@@ -98,13 +98,13 @@ Approval is only a handoff marker. Publishing stays manual.
 Export Telegram posts:
 
 ```bash
-python3 scripts/export_telegram_posts.py vibecodesh --limit 20
+python3 scripts/export_telegram_posts.py "<your channel>" --limit 20
 ```
 
 Build metrics from an exported corpus:
 
 ```bash
-python3 scripts/build_telegram_metrics.py data/raw/telegram/vibecodesh.jsonl
+python3 scripts/build_telegram_metrics.py "data/raw/telegram/<your channel>.jsonl"
 ```
 
 Assemble a local draft prompt without calling a model:
@@ -152,7 +152,7 @@ export ANTHROPIC_API_KEY=...
 python3 scripts/run_telegram_bot.py --allowed-chat-id <your-chat-id>
 ```
 
-If this repository does not have its own `.env`, the Telegram and drafting commands will automatically try to reuse `../vb-influencer/.env` and the sibling Telethon session when available.
+If this repository does not have its own `.env`, set `TONE_OF_VOICE_FALLBACK_ENV` or pass `--env-file` explicitly to reuse credentials from another local project.
 
 Draft artifacts are written to `data/working/drafts/` by default and are intentionally ignored by git.
 Feedback artifacts are written to `data/working/feedback/` by default and are intentionally ignored by git.

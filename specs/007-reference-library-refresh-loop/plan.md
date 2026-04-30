@@ -8,7 +8,7 @@ The implementation is documentation-first because Step 1 is about durable voice 
 
 ## Steps
 
-1. Export recent `@vibecodesh` posts into `/tmp` using the existing exporter.
+1. Export recent `<your channel>` posts into `/tmp` using the existing exporter.
 2. Select examples that cover different post types: quick reaction, practice lesson, workflow explanation, contrarian tool take, project update, setup breakdown, and teaser.
 3. Add `docs/10-reference-library.md` with tags and retrieval shortcuts.
 4. Add `docs/11-refresh-log.md` with the refresh decision and next triggers.

@@ -28,4 +28,4 @@ All paths are working artifacts and remain ignored by git.
 
 ## Deployment Shape
 
-The first release is a long-running Telethon bot process managed by systemd. It should be installed from the repository checkout on the same AWS host family as `vb-influencer`, with secrets supplied through an env file outside git.
+The first release is a long-running Telethon bot process managed by systemd. It should be installed from the repository checkout on the same AWS host family as `<sibling Telegram project>`, with secrets supplied through an env file outside git.

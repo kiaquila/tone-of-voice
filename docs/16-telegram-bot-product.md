@@ -13,7 +13,7 @@ The first release never auto-publishes. Approval only records review history.
 
 ## Production Chat Workflow
 
-The production bot is `@vbnews_bot` in the `Editorial Room` Telegram chat.
+The production bot is `@<your bot>` in the `<your group>` Telegram chat.
 
 Start a draft with:
 
@@ -24,13 +24,13 @@ Start a draft with:
 In the group chat, use the mentioned command if needed:
 
 ```text
-/draft@vbnews_bot <idea>
+/draft@<your bot> <idea>
 ```
 
 Good requests include the angle, rough facts, desired mood, and any constraint that should survive into the post. For example:
 
 ```text
-/draft@vbnews_bot короткий пост о том, что бот для черновиков запущен; акцент на human-in-the-loop, без пафоса
+/draft@<your bot> короткий пост о том, что бот для черновиков запущен; акцент на human-in-the-loop, без пафоса
 ```
 
 After a draft exists, use `/revise <instruction>` or send a plain text revision request. Use `/approve` when the draft is ready for manual handoff, or `/cancel` to clear the active draft without saving approval history.
@@ -59,8 +59,8 @@ Useful options:
 ```bash
 python3 scripts/run_telegram_bot.py --dry-run
 python3 scripts/run_telegram_bot.py --allowed-chat-id 123456789
-python3 scripts/run_telegram_bot.py --session-dir /srv/tone-of-voice/sessions
-python3 scripts/run_telegram_bot.py --output-dir /srv/tone-of-voice/data/bot
+python3 scripts/run_telegram_bot.py --session-dir /opt/tone-of-voice/sessions
+python3 scripts/run_telegram_bot.py --output-dir /opt/tone-of-voice/data/bot
 ```
 
 Dry run mode writes prompt artifacts without calling Anthropic. It is useful for host smoke checks and bot-token validation.
@@ -89,7 +89,7 @@ Optional:
 - `TELEGRAM_SESSION_NAME`
 - `TONE_OF_VOICE_FALLBACK_ENV`
 
-The env loader still checks this repository's `.env` first and then falls back to `../vb-influencer/.env` when present.
+The env loader checks this repository's `.env` first. Set `TONE_OF_VOICE_FALLBACK_ENV` or pass `--env-file` explicitly to reuse credentials from another local project.
 
 ## Storage
 
@@ -99,7 +99,7 @@ Default state root:
 data/working/bot/
 ```
 
-The systemd template at `deploy/systemd/tone-of-voice-telegram-bot.service.example` overrides this with `--output-dir /srv/tone-of-voice/data/bot` so production state lives under `/srv` rather than the repo checkout. Adjust the override to match your host layout.
+The systemd template at `deploy/systemd/tone-of-voice-telegram-bot.service.example` overrides this with `--output-dir /opt/tone-of-voice/data/bot` so production state can live outside the repo checkout. Adjust the override to match your host layout.
 
 Layout:
 
@@ -142,10 +142,10 @@ Then send `/draft smoke test for the bot` to the bot. The expected result is a d
 
 Use `deploy/systemd/tone-of-voice-telegram-bot.service.example` as the starting point for the host unit. Keep the real env file outside git.
 
-Production currently runs as `tone-of-voice-telegram-bot.service` on the same AWS host family as `vb-influencer`. The live service uses:
+Production can run as `tone-of-voice-telegram-bot.service` on your preferred host. A typical service uses:
 
-- working directory: `/srv/tone-of-voice`
-- environment file: `/home/ubuntu/vb-influencer/.env`
-- state root: `/srv/tone-of-voice/data/bot`
-- session directory: `/srv/tone-of-voice/sessions`
-- allowed chat: `Editorial Room`
+- working directory: `/opt/tone-of-voice`
+- environment file: `<env file path>`
+- state root: `/opt/tone-of-voice/data/bot`
+- session directory: `/opt/tone-of-voice/sessions`
+- allowed chat: `<your group>`

@@ -44,5 +44,5 @@ Out of scope:
 - The new workflow files exist and `node --check` passes on all three `scripts/*.mjs` files.
 - On the bootstrap PR itself, the `AI Review` check completes green via the bootstrap-skip path, with a step summary explaining the skip.
 - On the next PR after merge, the `AI Review` check actually polls for a Codex review on the head SHA and fails if no review exists within the 20-minute window.
-- Branch protection settings on `main` match `pallete-maker`'s settings: required status checks `baseline-checks`, `guard`, `AI Review`; `strict: false`; `enforce_admins: true`.
-- `gh api repos/kiaquila/tone-of-voice/branches/main/protection --jq '{checks: .required_status_checks.contexts, enforce_admins: .enforce_admins.enabled}'` returns the expected configuration.
+- Branch protection settings on `main` match the sibling project's settings: required status checks `baseline-checks`, `guard`, `AI Review`; `strict: false`; `enforce_admins: true`.
+- `gh api repos/<your org>/tone-of-voice/branches/main/protection --jq '{checks: .required_status_checks.contexts, enforce_admins: .enforce_admins.enabled}'` returns the expected configuration.

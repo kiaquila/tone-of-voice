@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/srv/tone-of-voice
-EnvironmentFile=/srv/tone-of-voice/.env
-ExecStart=/srv/tone-of-voice/.venv/bin/python scripts/run_telegram_bot.py --output-dir /srv/tone-of-voice/data/bot
+WorkingDirectory=/opt/tone-of-voice
+EnvironmentFile=/opt/tone-of-voice/.env
+ExecStart=/opt/tone-of-voice/.venv/bin/python scripts/run_telegram_bot.py --output-dir /opt/tone-of-voice/data/bot
 Restart=on-failure
 RestartSec=10
 

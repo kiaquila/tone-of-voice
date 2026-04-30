@@ -42,7 +42,7 @@ Voice checks:
 
 Use when:
 
-- Kristina tried a tool, changed a workflow, or noticed a pattern
+- the author tried a tool, changed a workflow, or noticed a pattern
 - the draft should teach through lived usage rather than a tutorial
 
 Retrieve:
@@ -93,7 +93,7 @@ Voice checks:
 Use when:
 
 - a hyped tool or launch is being discussed
-- Kristina's angle is "I tried something nearby, and here is the catch"
+- the author's angle is "I tried something nearby, and here is the catch"
 
 Retrieve:
 
@@ -119,7 +119,7 @@ Voice checks:
 
 Use when:
 
-- sharing something Kristina built, shipped, polished, or is building
+- sharing something the author built, shipped, polished, or is building
 - asking for feedback without sounding promotional
 
 Retrieve:
@@ -161,7 +161,7 @@ Shape:
 
 Voice checks:
 
-- Does it still sound like Kristina, not a viral-template account?
+- Does it still sound like the author, not a viral-template account?
 - Did we keep at least one lived detail?
 - Did we cut context that only Telegram regulars would understand?
 

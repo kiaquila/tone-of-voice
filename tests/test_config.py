@@ -43,6 +43,12 @@ class LoadProjectEnvTest(unittest.TestCase):
 
 
 class DefaultEnvCandidatesTest(unittest.TestCase):
+    def test_without_fallback_env_only_uses_repo_dot_env(self) -> None:
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("TONE_OF_VOICE_FALLBACK_ENV", None)
+            candidates = config.default_env_candidates()
+        self.assertEqual(candidates, [config.repo_root() / ".env"])
+
     def test_first_candidate_is_repo_dot_env(self) -> None:
         candidates = config.default_env_candidates()
         self.assertEqual(candidates[0], config.repo_root() / ".env")

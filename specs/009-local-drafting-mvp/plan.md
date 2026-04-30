@@ -19,7 +19,7 @@ Use the Anthropic Messages API through Python's standard library for live genera
 Reasons:
 
 - no new runtime dependency is required
-- Kristina's adjacent bot workflow already has `ANTHROPIC_API_KEY`
+- the author's adjacent bot workflow already has `ANTHROPIC_API_KEY`
 - the backend remains easy to swap once feedback and evals show a reason to do so
 
 The command reads `ANTHROPIC_API_KEY` and defaults to `TONE_OF_VOICE_ANTHROPIC_MODEL` or `ANTHROPIC_MODEL` when set. Otherwise it uses `claude-sonnet-4-6`, which is documented as Anthropic's current Sonnet API alias.
