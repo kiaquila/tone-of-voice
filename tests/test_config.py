@@ -60,6 +60,15 @@ class DefaultEnvCandidatesTest(unittest.TestCase):
             candidates = config.default_env_candidates()
         self.assertIn(Path("/tmp/alt.env"), candidates)
 
+    def test_relative_traversal_outside_parent_raises(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {"TONE_OF_VOICE_FALLBACK_ENV": "../../../../etc/passwd"},
+            clear=False,
+        ):
+            with self.assertRaises(ValueError):
+                config.default_env_candidates()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -148,4 +148,4 @@ Production can run as `tone-of-voice-telegram-bot.service` on your preferred hos
 - environment file: `<env file path>`
 - state root: `/opt/tone-of-voice/data/bot`
 - session directory: `/opt/tone-of-voice/sessions`
-- allowed chat: `<your group>`
+- allowed chat: `<your-chat-id>`
