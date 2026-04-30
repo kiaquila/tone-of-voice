@@ -8,8 +8,10 @@ from pathlib import Path
 from tone_of_voice.config import repo_root
 from tone_of_voice.drafting import (
     DraftRequest,
+    anthropic_max_tokens_from_env,
     build_prompt_bundle,
-    extract_response_text,
+    extract_anthropic_message_text,
+    generate_with_anthropic_messages,
     load_reference_library,
     select_references,
     write_draft_artifact,
@@ -97,28 +99,124 @@ class PromptBundleTest(unittest.TestCase):
         self.assertIn(request.angle, bundle.prompt)
         self.assertGreaterEqual(len(bundle.references), 3)
 
+    def test_build_prompt_bundle_reads_anthropic_model_env(self) -> None:
+        import os
+        from unittest import mock
+
+        request = DraftRequest.from_mapping(
+            {"platform": "telegram", "angle": "MVP shipped", "max_references": 3}
+        )
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "ANTHROPIC_MODEL": "claude-haiku-4-5",
+                "TONE_OF_VOICE_ANTHROPIC_MODEL": "claude-sonnet-4-6",
+            },
+        ):
+            bundle = build_prompt_bundle(request, root=repo_root())
+
+        self.assertEqual(bundle.model, "claude-sonnet-4-6")
+
 
 class ResponseExtractionTest(unittest.TestCase):
-    def test_extracts_direct_output_text(self) -> None:
+    def test_extracts_anthropic_text_content(self) -> None:
         self.assertEqual(
-            extract_response_text({"output_text": "  draft text  "}),
+            extract_anthropic_message_text(
+                {"content": [{"type": "text", "text": "  draft text  "}]}
+            ),
             "draft text",
         )
 
-    def test_extracts_nested_output_text(self) -> None:
+    def test_extracts_multiple_anthropic_text_blocks(self) -> None:
         response = {
-            "output": [
-                {
-                    "type": "message",
-                    "content": [
-                        {"type": "output_text", "text": "first"},
-                        {"type": "output_text", "text": "second"},
-                    ],
-                }
+            "content": [
+                {"type": "text", "text": "first"},
+                {"type": "text", "text": "second"},
             ]
         }
 
-        self.assertEqual(extract_response_text(response), "first\nsecond")
+        self.assertEqual(extract_anthropic_message_text(response), "first\nsecond")
+
+    def test_generate_requires_anthropic_api_key(self) -> None:
+        import os
+        from unittest import mock
+
+        request = DraftRequest.from_mapping(
+            {"platform": "telegram", "angle": "MVP shipped", "max_references": 3}
+        )
+        bundle = build_prompt_bundle(request, root=repo_root(), model="test-model")
+
+        with mock.patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(RuntimeError) as cm:
+                generate_with_anthropic_messages(bundle)
+        self.assertIn("ANTHROPIC_API_KEY", str(cm.exception))
+
+    def test_generate_posts_anthropic_messages_payload(self) -> None:
+        import os
+        from unittest import mock
+
+        request = DraftRequest.from_mapping(
+            {"platform": "telegram", "angle": "MVP shipped", "max_references": 3}
+        )
+        bundle = build_prompt_bundle(request, root=repo_root(), model="test-model")
+        captured: dict[str, object] = {}
+
+        class FakeResponse:
+            def __enter__(self) -> "FakeResponse":
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return json.dumps(
+                    {"id": "msg_test", "content": [{"type": "text", "text": "draft"}]}
+                ).encode("utf-8")
+
+        def fake_urlopen(req: object, timeout: int) -> FakeResponse:
+            captured["timeout"] = timeout
+            captured["payload"] = json.loads(req.data.decode("utf-8"))  # type: ignore[attr-defined]
+            captured["api_key"] = req.get_header("X-api-key")  # type: ignore[attr-defined]
+            captured["version"] = req.get_header("Anthropic-version")  # type: ignore[attr-defined]
+            return FakeResponse()
+
+        with mock.patch.dict(os.environ, {}, clear=True):
+            with mock.patch("urllib.request.urlopen", fake_urlopen):
+                draft, response = generate_with_anthropic_messages(
+                    bundle,
+                    api_key="sk-test",
+                    timeout=7,
+                    max_tokens=123,
+                )
+
+        self.assertEqual(draft, "draft")
+        self.assertEqual(response["id"], "msg_test")
+        self.assertEqual(captured["timeout"], 7)
+        self.assertEqual(captured["api_key"], "sk-test")
+        self.assertEqual(captured["version"], "2023-06-01")
+        self.assertEqual(
+            captured["payload"],
+            {
+                "model": "test-model",
+                "max_tokens": 123,
+                "system": bundle.system_instructions,
+                "messages": [{"role": "user", "content": bundle.prompt}],
+            },
+        )
+
+    def test_anthropic_max_tokens_reads_tone_of_voice_env_first(self) -> None:
+        import os
+        from unittest import mock
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "ANTHROPIC_MAX_TOKENS": "100",
+                "TONE_OF_VOICE_ANTHROPIC_MAX_TOKENS": "200",
+            },
+        ):
+            self.assertEqual(anthropic_max_tokens_from_env(), 200)
 
 
 class ArtifactWritingTest(unittest.TestCase):

@@ -8,7 +8,7 @@ Turn the local drafting MVP into a Telegram bot that Kristina can use from a pho
 
 1. Kristina sends `/draft <idea>` to the bot.
 2. The bot converts the idea into a Telegram `DraftRequest`.
-3. The existing drafting pipeline assembles voice memory, references, prompt artifacts, and an OpenAI Responses API draft.
+3. The existing drafting pipeline assembles voice memory, references, prompt artifacts, and an Anthropic Messages API draft.
 4. Kristina can send `/revise <instruction>` to loop on the active draft without losing the original context.
 5. Kristina sends `/approve` when the draft is ready for manual handoff.
 
@@ -17,7 +17,7 @@ Turn the local drafting MVP into a Telegram bot that Kristina can use from a pho
 - The first bot release must not auto-publish.
 - Session state must survive process restarts.
 - Review history must be stored separately from the active session.
-- The bot must support an offline dry-run smoke check that does not require Telegram or OpenAI network calls.
+- The bot must support an offline dry-run smoke check that does not require Telegram or Anthropic network calls.
 - The runtime must reuse the existing `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, and sibling `vb-influencer` env fallback when available.
 - Bot access should be restrictable by chat id.
 

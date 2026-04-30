@@ -22,8 +22,8 @@ All paths are working artifacts and remain ignored by git.
 - `TELEGRAM_API_ID`
 - `TELEGRAM_API_HASH`
 - `TONE_OF_VOICE_TELEGRAM_BOT_TOKEN` or `TELEGRAM_BOT_TOKEN`
-- `OPENAI_API_KEY` for live generation
-- `OPENAI_MODEL` or CLI `--model` to override the drafting model
+- `ANTHROPIC_API_KEY` for live generation
+- `TONE_OF_VOICE_ANTHROPIC_MODEL`, `ANTHROPIC_MODEL`, or CLI `--model` to override the drafting model
 - `TONE_OF_VOICE_BOT_ALLOWED_CHAT_IDS` for optional access control
 
 ## Deployment Shape
