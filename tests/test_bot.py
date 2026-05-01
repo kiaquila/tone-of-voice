@@ -4,6 +4,7 @@ import asyncio
 import json
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from tone_of_voice.bot import (
@@ -13,8 +14,10 @@ from tone_of_voice.bot import (
     allowed_chat_ids_from_env,
     compact_stamp,
     run_telegram_bot,
+    should_ignore_stale_message,
     split_command,
     split_for_telegram,
+    startup_stale_cutoff,
 )
 from tone_of_voice.drafting import DraftRequest
 
@@ -58,6 +61,12 @@ class BotCommandTest(unittest.TestCase):
             ("/draft", "foo", True),
         )
 
+    def test_split_command_bare_command_is_addressed_to_us(self) -> None:
+        self.assertEqual(
+            split_command("/draft foo", bot_username="my_bot"),
+            ("/draft", "foo", True),
+        )
+
     def test_split_command_handles_arbitrary_whitespace(self) -> None:
         self.assertEqual(split_command("/draft\nidea body"), ("/draft", "idea body", True))
         self.assertEqual(split_command("/revise\tshorter please"), ("/revise", "shorter please", True))
@@ -72,6 +81,52 @@ class CompactStampTest(unittest.TestCase):
     def test_compact_stamp_includes_microseconds(self) -> None:
         stamp = compact_stamp()
         self.assertRegex(stamp, r"^\d{8}T\d{6}\d{6}Z$")
+
+
+class StaleMessageTest(unittest.TestCase):
+    def test_startup_stale_cutoff_uses_configured_grace_window(self) -> None:
+        now = datetime(2026, 5, 1, 12, 0, tzinfo=timezone.utc)
+        self.assertEqual(
+            startup_stale_cutoff(300, now=now),
+            datetime(2026, 5, 1, 11, 55, tzinfo=timezone.utc),
+        )
+
+    def test_startup_stale_cutoff_can_be_disabled(self) -> None:
+        self.assertIsNone(startup_stale_cutoff(-1))
+        self.assertIsNone(startup_stale_cutoff(None))
+
+    def test_should_ignore_messages_older_than_cutoff(self) -> None:
+        cutoff = datetime(2026, 5, 1, 11, 55, tzinfo=timezone.utc)
+
+        self.assertTrue(
+            should_ignore_stale_message(
+                datetime(2026, 5, 1, 11, 54, 59, tzinfo=timezone.utc),
+                cutoff,
+            )
+        )
+        self.assertFalse(
+            should_ignore_stale_message(
+                datetime(2026, 5, 1, 11, 55, tzinfo=timezone.utc),
+                cutoff,
+            )
+        )
+        self.assertFalse(
+            should_ignore_stale_message(
+                datetime(2026, 5, 1, 11, 56, tzinfo=timezone.utc),
+                cutoff,
+            )
+        )
+
+    def test_should_ignore_stale_message_handles_naive_datetimes(self) -> None:
+        cutoff = datetime(2026, 5, 1, 11, 55, tzinfo=timezone.utc)
+        self.assertTrue(
+            should_ignore_stale_message(datetime(2026, 5, 1, 11, 54), cutoff)
+        )
+
+    def test_should_ignore_stale_message_ignores_unknown_dates(self) -> None:
+        cutoff = datetime(2026, 5, 1, 11, 55, tzinfo=timezone.utc)
+        self.assertFalse(should_ignore_stale_message(None, cutoff))
+        self.assertFalse(should_ignore_stale_message("2026-05-01", cutoff))
 
 
 class BotStateStoreTest(unittest.TestCase):

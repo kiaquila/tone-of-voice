@@ -8,7 +8,7 @@ import re
 import secrets
 import threading
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BOT_OUTPUT_DIR = "data/working/bot"
 DEFAULT_BOT_SESSION_NAME = "tone_of_voice_bot"
+DEFAULT_DROP_STALE_SECONDS = 300
 TELEGRAM_MESSAGE_LIMIT = 3900
 
 
@@ -367,6 +368,7 @@ async def run_telegram_bot(
     allowed_chat_ids: set[int] | None = None,
     allow_public: bool = False,
     timeout: int = 120,
+    drop_stale_seconds: int | None = DEFAULT_DROP_STALE_SECONDS,
 ) -> None:
     from telethon import TelegramClient, events
 
@@ -398,6 +400,7 @@ async def run_telegram_bot(
         allowed_chat_ids=allowed_chat_ids,
         bot_username=bot_username,
     )
+    stale_cutoff = startup_stale_cutoff(drop_stale_seconds)
 
     if allow_public and not allowed_chat_ids:
         logger.warning(
@@ -409,6 +412,15 @@ async def run_telegram_bot(
     async def on_message(event: Any) -> None:
         text = event.raw_text or ""
         chat_id = int(event.chat_id)
+        message_date = getattr(getattr(event, "message", None), "date", None)
+        if should_ignore_stale_message(message_date, stale_cutoff):
+            logger.info(
+                "Ignoring stale Telegram message chat_id=%s message_date=%s cutoff=%s",
+                chat_id,
+                message_date,
+                stale_cutoff,
+            )
+            return
         replies = await asyncio.to_thread(assistant.handle_text, chat_id, text)
         for message in replies:
             for chunk in split_for_telegram(message):
@@ -416,6 +428,8 @@ async def run_telegram_bot(
 
     print(f"Telegram bot running with session: {session_stem}")
     print(f"Bot state root: {output_root}")
+    if stale_cutoff:
+        print(f"Ignoring messages older than: {stale_cutoff.isoformat()}")
     await client.run_until_disconnected()
 
 
@@ -455,6 +469,32 @@ def split_command(
     if mention and bot_username and mention.lower() != bot_username.lower():
         return command, rest, False
     return command, rest, True
+
+
+def startup_stale_cutoff(
+    drop_stale_seconds: int | None,
+    *,
+    now: datetime | None = None,
+) -> datetime | None:
+    if drop_stale_seconds is None or drop_stale_seconds < 0:
+        return None
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    return current.astimezone(timezone.utc) - timedelta(seconds=drop_stale_seconds)
+
+
+def should_ignore_stale_message(
+    message_date: Any,
+    stale_cutoff: datetime | None,
+) -> bool:
+    if stale_cutoff is None or not isinstance(message_date, datetime):
+        return False
+    if message_date.tzinfo is None:
+        normalized = message_date.replace(tzinfo=timezone.utc)
+    else:
+        normalized = message_date.astimezone(timezone.utc)
+    return normalized < stale_cutoff
 
 
 def format_draft_response(result: DraftResult, *, intro: str) -> tuple[str, ...]:
