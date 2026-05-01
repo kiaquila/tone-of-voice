@@ -55,6 +55,13 @@ class ResolvedFinalText:
     published_at: str | None = None
 
 
+@dataclass(frozen=True)
+class FeedbackSourceMatch:
+    raw_path: Path
+    analysis_path: Path
+    record: dict[str, Any]
+
+
 @dataclass
 class BotSession:
     chat_id: int
@@ -157,12 +164,18 @@ class BotStateStore:
         return None
 
     def feedback_exists_for_source(self, source_draft_artifact: str | None) -> bool:
+        return self.feedback_record_for_source(source_draft_artifact) is not None
+
+    def feedback_record_for_source(
+        self,
+        source_draft_artifact: str | None,
+    ) -> FeedbackSourceMatch | None:
         if not source_draft_artifact:
-            return False
+            return None
 
         raw_dir = self.feedback_dir / "raw"
         if not raw_dir.exists():
-            return False
+            return None
 
         for path in raw_dir.glob("*.json"):
             try:
@@ -172,8 +185,13 @@ class BotStateStore:
                 continue
             source = data.get("source") or {}
             if source.get("draft_artifact_path") == source_draft_artifact:
-                return True
-        return False
+                feedback_id = str(data.get("id") or path.stem)
+                return FeedbackSourceMatch(
+                    raw_path=path,
+                    analysis_path=self.feedback_dir / "analysis" / f"{feedback_id}.json",
+                    record=data,
+                )
+        return None
 
     def _session_path(self, chat_id: int) -> Path:
         return self.sessions_dir / f"chat-{chat_id}.json"
@@ -250,8 +268,12 @@ class TelegramDraftAssistant:
                 return (f"Unknown command: {command}\n\n{help_text()}",)
 
             session = self.store.load(chat_id)
+            if session and session.status == "awaiting_final_replace":
+                return self._final(chat_id, clean, replace_requested=True)
             if session and session.status == "awaiting_final":
                 return self._final(chat_id, clean)
+            if session and session.status == "awaiting_revision":
+                return self._revise(chat_id, clean)
             if session and session.draft:
                 return self._revise(chat_id, clean)
             return self._draft(chat_id, clean)
@@ -313,12 +335,17 @@ class TelegramDraftAssistant:
 
     def _revise(self, chat_id: int, instruction: str) -> tuple[str, ...]:
         instruction = instruction.strip()
-        if not instruction:
-            return ("Send the revision instruction after /revise.",)
-
         session = self.store.load(chat_id)
         if not session or not session.draft:
             return ("No active draft yet. Send /draft followed by an idea first.",)
+        if not instruction:
+            session.status = "awaiting_revision"
+            session.record_event("revision_requested")
+            self.store.save(session)
+            return (
+                "Send the revision instruction in the next message. "
+                "Send /cancel to stop waiting for the revision.",
+            )
 
         source_notes = "\n\n".join(
             part
@@ -374,26 +401,53 @@ class TelegramDraftAssistant:
             f"Review history: {history_path}",
         )
 
-    def _final(self, chat_id: int, final_input: str) -> tuple[str, ...]:
+    def _final(
+        self,
+        chat_id: int,
+        final_input: str,
+        *,
+        replace_requested: bool = False,
+    ) -> tuple[str, ...]:
         session = self._final_target_session(chat_id)
         if not session or not session.draft:
             return ("No draft to finalize. Send /draft first, then /final <final text>.",)
 
-        if self.store.feedback_exists_for_source(session.draft_artifact_path):
+        replace_requested, final_input = parse_final_input_options(
+            final_input,
+            replace_requested=replace_requested,
+        )
+        existing_feedback = self.store.feedback_record_for_source(session.draft_artifact_path)
+        if existing_feedback and not replace_requested:
             return (
                 "Feedback for this draft was already captured. "
-                "Send /draft to start a new one, or /stat to inspect learning progress.",
+                "Send /final --replace <text or Telegram link> to overwrite it, "
+                "or /stat to inspect learning progress.",
+            )
+        if replace_requested and not existing_feedback:
+            return (
+                "No existing feedback for this draft to replace. "
+                "Send /final <text or Telegram link> to capture it first.",
             )
 
-        final_input = final_input.strip()
         if not final_input:
-            session.status = "awaiting_final"
-            session.record_event("final_requested")
+            session.status = "awaiting_final_replace" if replace_requested else "awaiting_final"
+            session.record_event("final_requested", replace=replace_requested)
             self.store.save(session)
-            return (
-                "Send the final post text or a Telegram post link in the next message. "
-                "Send /cancel to stop waiting for the final.",
+            prompt = (
+                "Send the replacement final post text or a Telegram post link in the next message. "
+                if replace_requested
+                else "Send the final post text or a Telegram post link in the next message. "
             )
+            return (
+                prompt
+                + "Send /cancel to stop waiting for the final.",
+            )
+
+        record_id = None
+        created_at = None
+        if existing_feedback:
+            record_id = str(existing_feedback.record.get("id") or existing_feedback.raw_path.stem)
+            created_at = parse_feedback_created_at(existing_feedback.record)
 
         resolved, error = self._resolve_final_input(final_input)
         if error:
@@ -417,11 +471,14 @@ class TelegramDraftAssistant:
         raw_path, analysis_path, _record, analysis = write_feedback_pair(
             feedback,
             output_dir=self.store.feedback_dir,
+            created_at=created_at,
+            record_id=record_id,
         )
 
         session.status = "finalized"
+        event_type = "final_replaced" if replace_requested else "final_captured"
         session.record_event(
-            "final_captured",
+            event_type,
             feedback_analysis_path=str(analysis_path),
             feedback_raw_path=str(raw_path),
             published_url=resolved.source_url,
@@ -434,7 +491,7 @@ class TelegramDraftAssistant:
         return (
             "\n".join(
                 [
-                    "Feedback captured.",
+                    "Feedback replaced." if replace_requested else "Feedback captured.",
                     f"Fit score: {fit_score}/100",
                     (
                         "Draft-to-final: "
@@ -788,6 +845,32 @@ def session_to_feedback_request(session: BotSession) -> dict[str, Any]:
     }
 
 
+def parse_final_input_options(
+    final_input: str,
+    *,
+    replace_requested: bool = False,
+) -> tuple[bool, str]:
+    clean = final_input.strip()
+    if clean == "--replace":
+        return True, ""
+    if clean.startswith("--replace "):
+        return True, clean[len("--replace ") :].strip()
+    return replace_requested, clean
+
+
+def parse_feedback_created_at(record: dict[str, Any]) -> datetime | None:
+    raw = str(record.get("created_at") or "").strip()
+    if not raw:
+        return None
+    try:
+        value = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def build_feedback_learning_context(
     feedback_dir: str | Path,
     *,
@@ -993,7 +1076,11 @@ def format_draft_response(result: DraftResult, *, intro: str) -> tuple[str, ...]
             [
                 intro,
                 result.draft,
-                "Reply with /revise <instruction>, /approve, /final <text or Telegram link>, or /cancel.",
+                (
+                    "Reply with /revise <instruction>, /approve, "
+                    "/final <text or Telegram link>, /final --replace <text or link>, "
+                    "or /cancel."
+                ),
             ]
         )
     else:
@@ -1038,6 +1125,7 @@ def help_text() -> str:
             "/revise <instruction> - revise the active draft",
             "/approve - save approval history for manual handoff",
             "/final <text or Telegram link> - capture the final version for feedback learning",
+            "/final --replace <text or Telegram link> - overwrite the captured final for this draft",
             "/stat - show feedback score trend and learning signal",
             "/status - show the active session",
             "/cancel - clear the active session",

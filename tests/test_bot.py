@@ -277,6 +277,29 @@ class TelegramDraftAssistantTest(unittest.TestCase):
             replies = assistant.handle_text(1, "make it shorter")
             self.assertTrue(any("Revised draft ready" in r for r in replies))
 
+    def test_bare_revise_waits_for_next_plain_message(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            store = BotStateStore(td)
+            assistant = TelegramDraftAssistant(store=store, generator=fake_generator)
+            assistant.handle_text(1, "/draft initial idea")
+
+            prompt = "\n".join(assistant.handle_text(1, "/revise"))
+
+            self.assertIn("next message", prompt)
+            session = store.load(1)
+            self.assertIsNotNone(session)
+            assert session is not None
+            self.assertEqual(session.status, "awaiting_revision")
+
+            replies = assistant.handle_text(1, "make it sharper")
+
+            self.assertIn("Revised draft ready", "\n".join(replies))
+            session = store.load(1)
+            self.assertIsNotNone(session)
+            assert session is not None
+            self.assertEqual(session.status, "revised")
+            self.assertEqual(session.revision_count, 1)
+
     def test_overwrite_guard_blocks_second_draft(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             assistant = TelegramDraftAssistant(
@@ -526,6 +549,58 @@ class TelegramDraftAssistantTest(unittest.TestCase):
             replies = assistant.handle_text(1, "/final final text again")
 
             self.assertIn("already captured", "\n".join(replies))
+            self.assertIn("/final --replace", "\n".join(replies))
+
+    def test_final_replace_overwrites_existing_feedback_for_latest_draft(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            store = BotStateStore(td)
+            assistant = TelegramDraftAssistant(store=store, generator=fake_generator)
+            assistant.handle_text(1, "/draft replace final")
+            assistant.handle_text(1, "/final first final")
+            raw_files = list((store.feedback_dir / "raw").glob("*.json"))
+            self.assertEqual(len(raw_files), 1)
+            first_record = json.loads(raw_files[0].read_text(encoding="utf-8"))
+
+            replies = assistant.handle_text(1, "/final --replace second final")
+
+            self.assertIn("Feedback replaced", "\n".join(replies))
+            raw_files = list((store.feedback_dir / "raw").glob("*.json"))
+            self.assertEqual(len(raw_files), 1)
+            second_record = json.loads(raw_files[0].read_text(encoding="utf-8"))
+            self.assertEqual(second_record["id"], first_record["id"])
+            self.assertEqual(second_record["final_text"], "second final")
+            self.assertIn("Pairs: 1", "\n".join(assistant.handle_text(1, "/stat")))
+
+    def test_final_replace_can_wait_for_next_plain_message(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            store = BotStateStore(td)
+            assistant = TelegramDraftAssistant(store=store, generator=fake_generator)
+            assistant.handle_text(1, "/draft pending replace")
+            assistant.handle_text(1, "/final original final")
+
+            prompt = "\n".join(assistant.handle_text(1, "/final --replace"))
+
+            self.assertIn("replacement final", prompt)
+            session = store.load(1)
+            self.assertIsNotNone(session)
+            assert session is not None
+            self.assertEqual(session.status, "awaiting_final_replace")
+
+            replies = assistant.handle_text(1, "replacement final text")
+
+            self.assertIn("Feedback replaced", "\n".join(replies))
+            raw_file = next((store.feedback_dir / "raw").glob("*.json"))
+            record = json.loads(raw_file.read_text(encoding="utf-8"))
+            self.assertEqual(record["final_text"], "replacement final text")
+
+    def test_final_replace_requires_existing_feedback(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            assistant = TelegramDraftAssistant(store=BotStateStore(td), generator=fake_generator)
+            assistant.handle_text(1, "/draft nothing captured")
+
+            replies = assistant.handle_text(1, "/final --replace replacement")
+
+            self.assertIn("No existing feedback", "\n".join(replies))
 
     def test_stat_reports_score_trend_and_learning_signal(self) -> None:
         with tempfile.TemporaryDirectory() as td:

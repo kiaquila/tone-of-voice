@@ -159,6 +159,8 @@ Status notes:
 - The runner defaults to a stale-update guard so restarts do not answer old queued Telegram commands.
 - Production deploy now follows a GitHub OIDC + S3 + AWS SSM release pattern and manages the bot through systemd.
 - `/final` captures pasted final text or a Telegram post link into bot-local feedback storage.
+- `/final --replace` overwrites a captured final for the same draft when a manual correction arrives late.
+- `/revise` can wait for the next plain message as its revision instruction.
 - `/stat` reports fit-score trend and whether recent final versions are being used as feedback memory in future drafts.
 
 ### Phase 5 — Cross-Platform Expansion

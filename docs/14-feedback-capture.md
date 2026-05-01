@@ -113,6 +113,11 @@ draft-to-final metrics, and clears the active session. It rejects duplicate
 If a pasted final text contains a Telegram URL alongside other text, the pasted
 text wins and no link fetch is attempted.
 
+If the final was captured too early, use `/final --replace <text or Telegram
+link>` to overwrite the existing raw/analysis pair for the same draft artifact.
+For long replacements, send `/final --replace` first and then send the corrected
+final text as the next plain message.
+
 Use `/stat` to inspect same-chat feedback pairs, latest fit score, rolling
 trend, median edit percentages, common correction tags, and the learning signal.
 Feedback memory and stats are scoped to the chat where the final was captured.
