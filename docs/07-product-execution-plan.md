@@ -160,9 +160,9 @@ Turn the local drafting flow into a phone-usable product for day-to-day work.
 
 ### Deliverables
 
-- Telegram bot handlers for draft, revise, and approve flows
+- Telegram bot handlers for draft, revise, approve, final-capture, and stat flows
 - a clean handoff from idea capture to generated draft
-- storage for bot session state and review history
+- storage for bot session state, review history, and captured final feedback
 - deployment setup and smoke checks on the same AWS host family used by `<sibling Telegram project>`
 - operator docs for restart, config, and failure recovery
 
@@ -171,19 +171,23 @@ Turn the local drafting flow into a phone-usable product for day-to-day work.
 - Keep the human in the loop; no auto-publishing in the first bot release.
 - The bot should optimize for speed, clarity, and low-friction iteration from a phone.
 - Reuse existing Telethon and sibling-host knowledge where it reduces risk.
+- Treat learning as feedback-memory retrieval from captured final versions, not model fine-tuning.
 
 ### Done When
 
 - the author can send an idea from a phone and receive a draft in Telegram
 - revision requests can loop without losing the original context
+- the author can capture the final manually edited post and inspect score trend from Telegram
 - the deployment is boring enough to trust for regular use
 
 ### Status Notes
 
-- `src/tone_of_voice/bot.py` implements the Telegram draft, revise, approve, status, cancel, and help flows.
+- `src/tone_of_voice/bot.py` implements the Telegram draft, revise, approve, final, stat, status, cancel, and help flows.
 - `scripts/run_telegram_bot.py` runs the live Telethon bot.
 - `scripts/smoke_telegram_bot.py` runs the bot draft loop offline in dry-run mode.
 - `docs/16-telegram-bot-product.md` documents runtime env, storage, smoke checks, and recovery.
+- `/final` stores pasted final text or a readable Telegram post link as draft/final feedback.
+- `/stat` reports fit-score trend plus the learning signal used by subsequent drafts.
 - `deploy/systemd/tone-of-voice-telegram-bot.service.example` provides the first host service template.
 - Production is enabled on the target AWS host as `tone-of-voice-telegram-bot.service`.
 - The first live smoke in `<your group>` confirmed both Telegram delivery and Anthropic draft generation.

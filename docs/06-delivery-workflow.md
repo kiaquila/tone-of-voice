@@ -43,7 +43,7 @@ Already implemented:
 - trusted-comment policy workflow for AI commands
 - classic branch protection on `main` with required checks and admin enforcement
 - regression eval slice inside `baseline-checks`
-- Telegram bot runner and offline smoke check
+- Telegram bot runner, offline smoke check, final feedback capture, and `/stat` scoring
 - automated production deploy workflow for the Telegram bot via GitHub OIDC, S3 release artifacts, AWS SSM, and systemd
 
 Planned later:

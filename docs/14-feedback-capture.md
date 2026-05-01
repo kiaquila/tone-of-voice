@@ -4,7 +4,9 @@
 
 This layer stores what changed between a generated draft and the final published text. It gives the system a way to learn from the author's edits instead of only from old source posts.
 
-The first version is intentionally manual. Automation can come later after the storage shape proves useful.
+Feedback can be captured manually from JSON files or through the Telegram bot's
+`/final` command. The bot path still keeps the author in the loop: it records a
+finished text after manual edits, but it does not publish anything.
 
 ## Storage Layout
 
@@ -14,6 +16,11 @@ Feedback artifacts live under `data/working/feedback/`, which is ignored by git:
 - `analysis/` stores normalized metrics derived from the raw record.
 
 Separating raw text from analysis keeps future evals from mixing source material, notes, and computed metrics in one blob.
+
+The Telegram bot stores the same raw/analysis shape under its bot output root,
+for example `data/working/bot/feedback/` locally or
+`/opt/tone-of-voice/data/bot/feedback/` on a host configured with that
+`--output-dir`.
 
 ## Raw Record Schema
 
@@ -82,6 +89,33 @@ Write a markdown summary:
 ```bash
 python3 scripts/summarize_feedback.py --markdown-output data/working/feedback/summary.md
 ```
+
+## Telegram Bot Workflow
+
+After a generated draft has been manually edited, capture the final version:
+
+```text
+/final <final post text>
+```
+
+For long posts, send `/final` and then the final text as the next plain
+message. If the final post is already published in Telegram, send the post link
+as the entire `/final` value:
+
+```text
+/final https://t.me/<channel>/<message-id>
+```
+
+The bot reads the visible Telegram post text, including topic/thread links,
+stores the source URL and publish time when available, computes the
+draft-to-final metrics, and clears the active session. It rejects duplicate
+`/final` captures for the same draft artifact.
+If a pasted final text contains a Telegram URL alongside other text, the pasted
+text wins and no link fetch is attempted.
+
+Use `/stat` to inspect same-chat feedback pairs, latest fit score, rolling
+trend, median edit percentages, common correction tags, and the learning signal.
+Feedback memory and stats are scoped to the chat where the final was captured.
 
 ## Correction Tags
 
