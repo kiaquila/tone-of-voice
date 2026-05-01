@@ -187,6 +187,8 @@ Turn the local drafting flow into a phone-usable product for day-to-day work.
 - `deploy/systemd/tone-of-voice-telegram-bot.service.example` provides the first host service template.
 - Production is enabled on the target AWS host as `tone-of-voice-telegram-bot.service`.
 - The first live smoke in `<your group>` confirmed both Telegram delivery and Anthropic draft generation.
+- The runner ignores stale Telegram updates by default so a host restart does not reply to old queued `/draft` messages.
+- `.github/workflows/deploy.yml` and `scripts/deploy_release.sh` provide the production deploy path through AWS SSM and systemd.
 
 ## Step 6 - Cross-Platform Expansion
 

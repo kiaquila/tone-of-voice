@@ -155,6 +155,8 @@ Status notes:
 - `scripts/smoke_telegram_bot.py` exercises the draft loop offline in dry-run mode.
 - `docs/16-telegram-bot-product.md` documents env vars, storage, smoke checks, and recovery.
 - Production is enabled on the target AWS host as the `tone-of-voice-telegram-bot.service` systemd service.
+- The runner defaults to a stale-update guard so restarts do not answer old queued Telegram commands.
+- Production deploy now follows a GitHub OIDC + S3 + AWS SSM release pattern and manages the bot through systemd.
 
 ### Phase 5 — Cross-Platform Expansion
 

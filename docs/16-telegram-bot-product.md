@@ -46,6 +46,10 @@ After a draft exists, use `/revise <instruction>` or send a plain text revision 
 
 If a chat already has an active draft, a plain text message is treated as a revision request.
 
+In the production group, use the short command form: `/draft <idea>`.
+The handler also accepts `/draft@<your bot> <idea>`, but the username suffix is
+only needed when another bot in the same group also responds to `/draft`.
+
 ## Runtime
 
 Run the bot locally or on the AWS host:
@@ -59,6 +63,7 @@ Useful options:
 ```bash
 python3 scripts/run_telegram_bot.py --dry-run
 python3 scripts/run_telegram_bot.py --allowed-chat-id 123456789
+python3 scripts/run_telegram_bot.py --drop-stale-seconds 300
 python3 scripts/run_telegram_bot.py --session-dir /opt/tone-of-voice/sessions
 python3 scripts/run_telegram_bot.py --output-dir /opt/tone-of-voice/data/bot
 ```
@@ -66,6 +71,11 @@ python3 scripts/run_telegram_bot.py --output-dir /opt/tone-of-voice/data/bot
 Dry run mode writes prompt artifacts without calling Anthropic. It is useful for host smoke checks and bot-token validation.
 
 The runner refuses to start without an allowlist. Either pass `--allowed-chat-id <id>`, set `TONE_OF_VOICE_BOT_ALLOWED_CHAT_IDS=<id1>,<id2>`, or pass `--allow-public` to explicitly opt out (only sensible for short-lived smoke tests with a unique bot username).
+
+By default, the runner ignores messages older than startup minus 300 seconds so
+restarting a long-stopped bot does not answer stale drafts from the Telegram
+update backlog. Use `--drop-stale-seconds <seconds>` to adjust the grace window,
+or a negative value to process all queued updates during a controlled replay.
 
 ## Environment
 
@@ -146,6 +156,7 @@ Then send `/draft smoke test for the bot` to the bot. The expected result is a d
 ## Failure Recovery
 
 - If the bot cannot start, check `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, and bot token env vars first.
+- If a group command gets no reply, confirm the process is running and send the command with the bot username, for example `/draft@<your bot> <idea>`.
 - If generation fails, confirm `ANTHROPIC_API_KEY` and rerun with `--dry-run` to separate prompt assembly from model access.
 - If the bot gets stuck in a stale draft, send `/cancel`.
 - If systemd restarts repeatedly, inspect the journal and run the offline smoke check from the same checkout and env file.
@@ -161,3 +172,21 @@ Production can run as `tone-of-voice-telegram-bot.service` on your preferred hos
 - state root: `/opt/tone-of-voice/data/bot`
 - session directory: `/opt/tone-of-voice/sessions`
 - allowed chat: `<your-chat-id>`
+
+## Production Deploy
+
+Production deploys use `.github/workflows/deploy.yml`, which follows a generic GitHub OIDC + S3 + AWS SSM release flow. The required repository variables are:
+
+- `AWS_REGION`
+- `AWS_DEPLOY_ROLE_ARN`
+- `DEPLOY_S3_BUCKET`
+- `DEPLOY_INSTANCE_ID`
+- `DEPLOY_TARGET_DIR`, for example `/opt/tone-of-voice`
+- `BOT_ENV_FILE`, optional path to an env file outside the deploy directory; the deploy script consumes it via the `BOT_ENV_FILE` environment variable
+- `BOT_ALLOWED_CHAT_IDS`, optional comma-separated allowlist of Telegram chat IDs
+
+On the host, `scripts/deploy_release.sh` preserves `.env`, `.venv/`, `data/`,
+Telegram session files, logs, and deploy metadata. It installs the Python package
+into the target virtualenv, writes a systemd unit for
+`tone-of-voice-telegram-bot`, stops any old manually launched tone-of-voice bot
+process, and restarts the managed service.

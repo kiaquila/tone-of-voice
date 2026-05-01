@@ -44,10 +44,11 @@ Already implemented:
 - classic branch protection on `main` with required checks and admin enforcement
 - regression eval slice inside `baseline-checks`
 - Telegram bot runner and offline smoke check
+- automated production deploy workflow for the Telegram bot via GitHub OIDC, S3 release artifacts, AWS SSM, and systemd
 
 Planned later:
 
-- automated deploy workflow for bot/server components
+- deploy promotion and rollback helpers after the first production smoke is stable
 
 ## Definition Of Done For This Stage
 

@@ -5,6 +5,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+User=ubuntu
+Group=ubuntu
 WorkingDirectory=/opt/tone-of-voice
 EnvironmentFile=/opt/tone-of-voice/.env
 ExecStart=/opt/tone-of-voice/.venv/bin/python scripts/run_telegram_bot.py --output-dir /opt/tone-of-voice/data/bot

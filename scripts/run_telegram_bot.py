@@ -7,6 +7,7 @@ import asyncio
 from tone_of_voice.bot import (
     DEFAULT_BOT_OUTPUT_DIR,
     DEFAULT_BOT_SESSION_NAME,
+    DEFAULT_DROP_STALE_SECONDS,
     allowed_chat_ids_from_env,
     bot_token_from_env,
     run_telegram_bot,
@@ -72,6 +73,15 @@ def parse_args() -> argparse.Namespace:
         default=120,
         help="Anthropic API timeout in seconds.",
     )
+    parser.add_argument(
+        "--drop-stale-seconds",
+        type=int,
+        default=DEFAULT_DROP_STALE_SECONDS,
+        help=(
+            "Ignore Telegram messages older than startup minus this many seconds. "
+            "Set a negative value to process all queued updates."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -88,6 +98,7 @@ async def main() -> None:
         allowed_chat_ids=allowed_chat_ids_from_env(args.allowed_chat_id),
         allow_public=args.allow_public,
         timeout=args.timeout,
+        drop_stale_seconds=args.drop_stale_seconds,
     )
 
 
