@@ -2,15 +2,15 @@
 
 ## Goal
 
-Turn the local drafting MVP into a Telegram bot that Kristina can use from a phone while preserving human approval before anything is published.
+Turn the local drafting MVP into a Telegram bot that the author can use from a phone while preserving human approval before anything is published.
 
 ## User Flow
 
-1. Kristina sends `/draft <idea>` to the bot.
+1. the author sends `/draft <idea>` to the bot.
 2. The bot converts the idea into a Telegram `DraftRequest`.
 3. The existing drafting pipeline assembles voice memory, references, prompt artifacts, and an Anthropic Messages API draft.
-4. Kristina can send `/revise <instruction>` to loop on the active draft without losing the original context.
-5. Kristina sends `/approve` when the draft is ready for manual handoff.
+4. the author can send `/revise <instruction>` to loop on the active draft without losing the original context.
+5. the author sends `/approve` when the draft is ready for manual handoff.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ Turn the local drafting MVP into a Telegram bot that Kristina can use from a pho
 - Session state must survive process restarts.
 - Review history must be stored separately from the active session.
 - The bot must support an offline dry-run smoke check that does not require Telegram or Anthropic network calls.
-- The runtime must reuse the existing `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, and sibling `vb-influencer` env fallback when available.
+- The runtime must reuse the existing `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, and explicit fallback env path when configured.
 - Bot access should be restrictable by chat id.
 
 ## Non-Goals

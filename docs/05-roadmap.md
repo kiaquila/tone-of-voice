@@ -2,11 +2,11 @@
 
 ## Product Goal
 
-Build a self-improving writing system that learns Kristina's style from published content and from draft-to-final edits, so a future interaction can be:
+Build a self-improving writing system that learns the author's style from published content and from draft-to-final edits, so a future interaction can be:
 
 1. send an idea
 2. choose a platform
-3. receive a near-finished post in Kristina's style
+3. receive a near-finished post in the author's style
 4. make fewer edits over time
 
 ## Success Metric
@@ -41,8 +41,7 @@ Already completed:
 
 Next recommended steps:
 
-- smoke-test and enable the Telegram bot on the target AWS host
-- continue `docs/07-product-execution-plan.md` toward Step 6 after the phone workflow is proven
+- continue `docs/07-product-execution-plan.md` toward Step 6 after the phone workflow has started producing real draft/final feedback
 
 ## Product Principles
 
@@ -135,13 +134,13 @@ Status notes:
 
 ### Phase 4 — Telegram Bot Assistant
 
-Status: ready for host smoke test
+Status: complete
 
 Goals:
 
-- let Kristina create drafts from a phone
+- let the author create drafts from a phone
 - preserve a tight human-in-the-loop workflow
-- deploy the bot on the same AWS host family used by `vb-influencer`
+- deploy the bot on the same AWS host family used by `<sibling Telegram project>`
 
 Deliverables:
 
@@ -155,7 +154,7 @@ Status notes:
 - `scripts/run_telegram_bot.py` runs the Telethon bot process.
 - `scripts/smoke_telegram_bot.py` exercises the draft loop offline in dry-run mode.
 - `docs/16-telegram-bot-product.md` documents env vars, storage, smoke checks, and recovery.
-- Production activation still requires host env configuration and a live phone smoke.
+- Production is enabled on the target AWS host as the `tone-of-voice-telegram-bot.service` systemd service.
 
 ### Phase 5 — Cross-Platform Expansion
 
@@ -184,8 +183,8 @@ Execution order:
 2. Step 2 - Local Drafting MVP - complete
 3. Step 3 - Feedback Capture And Edit Metrics - complete
 4. Step 4 - Regression Eval Gate - complete
-5. Step 5 - Telegram Bot Product - ready for host smoke test
-6. Step 6 - Cross-Platform Expansion - planned after phone workflow smoke
+5. Step 5 - Telegram Bot Product - complete
+6. Step 6 - Cross-Platform Expansion - planned after the phone workflow starts producing draft/final feedback
 
 ## Spec Pattern
 

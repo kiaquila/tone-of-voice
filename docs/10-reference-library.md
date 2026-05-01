@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file stores curated examples that future drafting sessions should retrieve before writing. It is not a complete archive. It is a compact set of high-signal posts that show how Kristina's voice works in practice.
+This file stores curated examples that future drafting sessions should retrieve before writing. It is not a complete archive. It is a compact set of high-signal posts that show how the author's voice works in practice.
 
 Use this file together with:
 
@@ -30,19 +30,19 @@ When drafting, retrieve 3 to 5 entries that match the topic and format. Do not i
 
 ## Seed Corpus
 
-Seeded from a fresh Telegram export of `@vibecodesh`.
+Seeded from a fresh Telegram export of `<your channel>`.
 
 - Export date: 2026-04-28
 - Exported posts: 52
 - Source date range: 2026-03-22 to 2026-04-27
-- Export command: `python3 scripts/export_telegram_posts.py vibecodesh --limit 80 --output /tmp/tov-vibecodesh-step1.jsonl`
+- Export command: `python3 scripts/export_telegram_posts.py "<your channel>" --limit 80 --output /tmp/tov-channel-step1.jsonl`
 
 ## Entries
 
 ### REF-TG-034 - Community Field Note
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/34
+- `source`: https://t.me/<your channel>/34
 - `published_at`: 2026-03-22
 - `post_type`: community, field_note
 - `mood`: playful, proud
@@ -66,7 +66,7 @@ Why it matters:
 ### REF-TG-084 - Compact Practice Lesson
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/84
+- `source`: https://t.me/<your channel>/84
 - `published_at`: 2026-04-03
 - `post_type`: opinion, field_note
 - `mood`: practical, lightly_sharp
@@ -90,7 +90,7 @@ Why it matters:
 ### REF-TG-088 - Multi-Agent Workflow Authority
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/88
+- `source`: https://t.me/<your channel>/88
 - `published_at`: 2026-04-04
 - `post_type`: tool_breakdown, opinion
 - `mood`: confident, practical
@@ -116,7 +116,7 @@ Why it matters:
 ### REF-TG-098 - Beginner Advice With Edge
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/98
+- `source`: https://t.me/<your channel>/98
 - `published_at`: 2026-04-08
 - `post_type`: opinion, practical_advice
 - `mood`: direct, encouraging, playful
@@ -142,7 +142,7 @@ Why it matters:
 ### REF-TG-102 - Contrarian Tool Take
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/102
+- `source`: https://t.me/<your channel>/102
 - `published_at`: 2026-04-09
 - `post_type`: reaction, opinion, tool_breakdown
 - `mood`: contrarian, practical, amused
@@ -168,7 +168,7 @@ Why it matters:
 ### REF-TG-106 - First Project Share
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/106
+- `source`: https://t.me/<your channel>/106
 - `published_at`: 2026-04-12
 - `post_type`: project_update
 - `mood`: lightly_vulnerable, warm, practical
@@ -194,7 +194,7 @@ Why it matters:
 ### REF-TG-120 - Tool Decision Update
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/120
+- `source`: https://t.me/<your channel>/120
 - `published_at`: 2026-04-21
 - `post_type`: field_note, tool_breakdown
 - `mood`: practical, amused, candid
@@ -220,7 +220,7 @@ Why it matters:
 ### REF-TG-129 - Product Meta In The Author's Voice
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/129
+- `source`: https://t.me/<your channel>/129
 - `published_at`: 2026-04-25
 - `post_type`: project_update, personal
 - `mood`: playful, candid, product_minded
@@ -244,7 +244,7 @@ Why it matters:
 ### REF-TG-134 - Setup Cost Breakdown
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/134
+- `source`: https://t.me/<your channel>/134
 - `published_at`: 2026-04-27
 - `post_type`: tool_breakdown
 - `mood`: transparent, playful, practical
@@ -279,7 +279,7 @@ Why it matters:
 ### REF-TG-137 - Teaser From Research
 
 - `platform`: telegram
-- `source`: https://t.me/vibecodesh/137
+- `source`: https://t.me/<your channel>/137
 - `published_at`: 2026-04-27
 - `post_type`: field_note, teaser
 - `mood`: amused, sharp, curious

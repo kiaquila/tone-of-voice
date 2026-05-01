@@ -6,7 +6,7 @@ Use a small Python implementation with reusable modules under `src/tone_of_voice
 
 Main pieces:
 
-- environment resolution with support for local `.env` or the sibling `vb-influencer/.env`
+- environment resolution with support for local `.env` or an explicit fallback env path
 - Telethon-based export of text posts from a Telegram channel
 - normalized JSONL corpus output
 - metrics computation from local exported files

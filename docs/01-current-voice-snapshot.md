@@ -1,6 +1,6 @@
 # Current Voice Snapshot
 
-Snapshot based on `@vibecodesh` posts reviewed through the existing Telethon access used in `vb-influencer`.
+Snapshot based on `<your channel>` posts reviewed through the existing Telethon access used in `<sibling Telegram project>`.
 
 ## Corpus Snapshot
 
@@ -56,4 +56,4 @@ Common emotional pattern:
 
 ## Benchmark Note
 
-Compared with `@whybluemusk`, this voice is less editorial and less essay-driven, but stronger in intimacy, immediacy, and personal-brand pull. `@whybluemusk` currently reads as the more tightly packaged media product; `@vibecodesh` reads as the more alive and trust-building human source.
+Compared with `<comparison channel>`, this voice is less editorial and less essay-driven, but stronger in intimacy, immediacy, and personal-brand pull. `<comparison channel>` currently reads as the more tightly packaged media product; `<your channel>` reads as the more alive and trust-building human source.

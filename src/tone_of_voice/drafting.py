@@ -38,7 +38,7 @@ RECIPE_SHORTCUT_ALIASES = {
     "linkedin_grounded_version": ("tool_or_setup_breakdown", "project_update"),
 }
 
-SYSTEM_INSTRUCTIONS = """You draft public posts for Kristina using only the provided voice memory.
+SYSTEM_INSTRUCTIONS = """You draft public posts for the author using only the provided voice memory.
 
 Write in the target platform's packaging while preserving the same authorial identity.
 Keep the draft human, situated, and first-person when the request allows it.

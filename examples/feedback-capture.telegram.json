@@ -4,7 +4,7 @@
   "approved_draft_text": "Сейчас пилю локальный MVP для tone of voice. Он уже собирает контекст и помогает писать черновики.",
   "edited_text": "Сейчас допилила локальный MVP для tone of voice. Он уже собирает контекст, подтягивает референсы и помогает писать черновики без ии слопа.",
   "final_text": "Сейчас допилила локальный MVP для tone of voice. Он уже собирает контекст, подтягивает референсы и помогает писать черновики без ии слопа.\n\nДальше хочу научить его считать, где я правлю тон и структуру. Вот это уже будет интересно 😄",
-  "published_url": "https://t.me/vibecodesh/example",
+  "published_url": "https://t.me/<your channel>/example",
   "published_at": "2026-04-29T12:00:00Z",
   "post_type": "project_update",
   "topics": ["tone_of_voice", "content_workflow", "agents"],

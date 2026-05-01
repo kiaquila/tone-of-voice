@@ -15,7 +15,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("channel", help="Telegram channel username without @")
     parser.add_argument(
         "--env-file",
-        help="Optional env file path. Defaults to .env or ../vb-influencer/.env if present.",
+        help=(
+            "Optional env file path. Defaults to .env, plus "
+            "TONE_OF_VOICE_FALLBACK_ENV when set."
+        ),
     )
     parser.add_argument(
         "--session-dir",

@@ -2,7 +2,7 @@
 
 ## Mission
 
-This repository stores durable memory about Kristina's public writing voice so future AI sessions can help create new content without flattening it into generic marketing copy.
+This repository stores durable memory about the author's public writing voice so future AI sessions can help create new content without flattening it into generic marketing copy.
 
 ## Priority Order
 
@@ -37,7 +37,7 @@ Before proposing or drafting posts, read in this order:
 
 ## Update Rule
 
-Do not overwrite the voice snapshot casually. Update it only when there is meaningful new source material or a visible shift in how Kristina writes publicly.
+Do not overwrite the voice snapshot casually. Update it only when there is meaningful new source material or a visible shift in how the author writes publicly.
 
 ## Delivery Rule
 

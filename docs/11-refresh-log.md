@@ -32,12 +32,12 @@ Do not update the snapshot for a single one-off joke, a temporary news burst, or
 Source:
 
 - Platform: Telegram
-- Channel: `@vibecodesh`
+- Channel: `<your channel>`
 - Exported posts: 52
 - Source date range: 2026-03-22 to 2026-04-27
-- Export command: `python3 scripts/export_telegram_posts.py vibecodesh --limit 80 --output /tmp/tov-vibecodesh-step1.jsonl`
-- Env source: `../vb-influencer/.env`
-- Session source: `../vb-influencer/vb_influencer_session`
+- Export command: `python3 scripts/export_telegram_posts.py "<your channel>" --limit 80 --output /tmp/tov-channel-step1.jsonl`
+- Env source: `<fallback env file>`
+- Session source: `<telegram session>`
 
 Changes made:
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This layer stores what changed between a generated draft and the final published text. It gives the system a way to learn from Kristina's edits instead of only from old source posts.
+This layer stores what changed between a generated draft and the final published text. It gives the system a way to learn from the author's edits instead of only from old source posts.
 
 The first version is intentionally manual. Automation can come later after the storage shape proves useful.
 

@@ -5,9 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tone-of-voice"
 version = "0.1.0"
-description = "Durable memory and tooling for Kristina's public writing voice."
+description = "Durable memory and tooling for the author's public writing voice."
 requires-python = ">=3.11"
 readme = "README.md"
+license = { file = "LICENSE" }
 dependencies = [
     "python-dotenv>=1.0,<2.0",
     "Telethon>=1.36,<2.0",

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create the first repeatable ingestion layer for the tone-of-voice system by reusing the existing Telegram access pattern already proven in `vb-influencer`.
+Create the first repeatable ingestion layer for the tone-of-voice system by reusing the existing Telegram access pattern already proven in `<sibling Telegram project>`.
 
 ## Why This Slice First
 

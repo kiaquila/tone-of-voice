@@ -17,7 +17,7 @@ This repository exists to make author-voice support durable, inspectable, and up
 
 Every useful output from this repo should make it easier to answer:
 
-- How does Kristina usually sound?
+- How does the author usually sound?
 - What should stay constant across platforms?
 - What should change for Telegram, Threads, and LinkedIn?
 - Which examples best represent the current voice?

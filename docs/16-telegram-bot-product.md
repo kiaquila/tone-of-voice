@@ -11,6 +11,30 @@ The Telegram bot turns the local drafting MVP into a phone-usable workflow:
 
 The first release never auto-publishes. Approval only records review history.
 
+## Production Chat Workflow
+
+The production bot is `@<your bot>` in the `<your group>` Telegram chat.
+
+Start a draft with:
+
+```text
+/draft <idea>
+```
+
+In the group chat, use the mentioned command if needed:
+
+```text
+/draft@<your bot> <idea>
+```
+
+Good requests include the angle, rough facts, desired mood, and any constraint that should survive into the post. For example:
+
+```text
+/draft@<your bot> короткий пост о том, что бот для черновиков запущен; акцент на human-in-the-loop, без пафоса
+```
+
+After a draft exists, use `/revise <instruction>` or send a plain text revision request. Use `/approve` when the draft is ready for manual handoff, or `/cancel` to clear the active draft without saving approval history.
+
 ## Commands
 
 - `/draft <idea>` creates a new Telegram draft from the idea. Refuses if you already have an active in-progress draft; send `/cancel` or `/approve` first.
@@ -35,8 +59,8 @@ Useful options:
 ```bash
 python3 scripts/run_telegram_bot.py --dry-run
 python3 scripts/run_telegram_bot.py --allowed-chat-id 123456789
-python3 scripts/run_telegram_bot.py --session-dir /srv/tone-of-voice/sessions
-python3 scripts/run_telegram_bot.py --output-dir /srv/tone-of-voice/data/bot
+python3 scripts/run_telegram_bot.py --session-dir /opt/tone-of-voice/sessions
+python3 scripts/run_telegram_bot.py --output-dir /opt/tone-of-voice/data/bot
 ```
 
 Dry run mode writes prompt artifacts without calling Anthropic. It is useful for host smoke checks and bot-token validation.
@@ -65,7 +89,19 @@ Optional:
 - `TELEGRAM_SESSION_NAME`
 - `TONE_OF_VOICE_FALLBACK_ENV`
 
-The env loader still checks this repository's `.env` first and then falls back to `../vb-influencer/.env` when present.
+The env loader checks this repository's `.env` first. Set `TONE_OF_VOICE_FALLBACK_ENV` or pass `--env-file` explicitly to reuse credentials from another local project.
+
+### Migration: session stem rename
+
+Earlier revisions of the export tooling resolved Telethon sessions to a project-specific default stem. The default has been renamed to `telegram_session` to keep the public repository free of local identifiers. The Telegram bot itself is unaffected: it pins its own `tone_of_voice_bot` session name.
+
+If you are upgrading from a previous deployment and have a `.session` file in the repository root with a different stem, pin the existing name before restarting any caller of `resolve_session_stem` (e.g. `scripts/export_telegram_posts.py`):
+
+```bash
+export TELEGRAM_SESSION_NAME=<existing-session-stem>
+```
+
+`resolve_session_stem` now prints a stderr warning when the default session file is missing but another `.session` file is present in the repo root, so a missed migration becomes visible instead of silently re-prompting for a fresh Telegram login.
 
 ## Storage
 
@@ -75,7 +111,7 @@ Default state root:
 data/working/bot/
 ```
 
-The systemd template at `deploy/systemd/tone-of-voice-telegram-bot.service.example` overrides this with `--output-dir /srv/tone-of-voice/data/bot` so production state lives under `/srv` rather than the repo checkout. Adjust the override to match your host layout.
+The systemd template at `deploy/systemd/tone-of-voice-telegram-bot.service.example` overrides this with `--output-dir /opt/tone-of-voice/data/bot` so production state can live outside the repo checkout. Adjust the override to match your host layout.
 
 Layout:
 
@@ -117,3 +153,11 @@ Then send `/draft smoke test for the bot` to the bot. The expected result is a d
 ## Systemd
 
 Use `deploy/systemd/tone-of-voice-telegram-bot.service.example` as the starting point for the host unit. Keep the real env file outside git.
+
+Production can run as `tone-of-voice-telegram-bot.service` on your preferred host. A typical service uses:
+
+- working directory: `/opt/tone-of-voice`
+- environment file: `<env file path>`
+- state root: `/opt/tone-of-voice/data/bot`
+- session directory: `/opt/tone-of-voice/sessions`
+- allowed chat: `<your-chat-id>`

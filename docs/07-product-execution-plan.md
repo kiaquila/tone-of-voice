@@ -65,13 +65,13 @@ Make the repository usable from a laptop: idea in, platform selected, draft out.
 
 - The first version does not need to publish anywhere.
 - It must produce one solid draft per request with minimal manual setup.
-- If a model backend decision is still open at implementation time, choose the simplest option already available in Kristina's workflow and document it in the same PR.
+- If a model backend decision is still open at implementation time, choose the simplest option already available in the author's workflow and document it in the same PR.
 
 ### Done When
 
 - one command can generate a Telegram, Threads, or LinkedIn draft from structured input
 - the generated draft keeps enough context to understand which references and rules were used
-- the flow is quick enough that Kristina would realistically use it before asking for a manual rewrite
+- the flow is quick enough that the author would realistically use it before asking for a manual rewrite
 
 ### Status Notes
 
@@ -86,7 +86,7 @@ Status: complete
 
 ### Goal
 
-Teach the system from Kristina's edits instead of only from source posts.
+Teach the system from the author's edits instead of only from source posts.
 
 ### Deliverables
 
@@ -152,7 +152,7 @@ Prevent silent quality drift when prompts, rules, or drafting logic change.
 
 ## Step 5 - Telegram Bot Product
 
-Status: ready for host smoke test
+Status: complete
 
 ### Goal
 
@@ -163,7 +163,7 @@ Turn the local drafting flow into a phone-usable product for day-to-day work.
 - Telegram bot handlers for draft, revise, and approve flows
 - a clean handoff from idea capture to generated draft
 - storage for bot session state and review history
-- deployment setup and smoke checks on the same AWS host family used by `vb-influencer`
+- deployment setup and smoke checks on the same AWS host family used by `<sibling Telegram project>`
 - operator docs for restart, config, and failure recovery
 
 ### Implementation Notes
@@ -174,7 +174,7 @@ Turn the local drafting flow into a phone-usable product for day-to-day work.
 
 ### Done When
 
-- Kristina can send an idea from a phone and receive a draft in Telegram
+- the author can send an idea from a phone and receive a draft in Telegram
 - revision requests can loop without losing the original context
 - the deployment is boring enough to trust for regular use
 
@@ -185,7 +185,8 @@ Turn the local drafting flow into a phone-usable product for day-to-day work.
 - `scripts/smoke_telegram_bot.py` runs the bot draft loop offline in dry-run mode.
 - `docs/16-telegram-bot-product.md` documents runtime env, storage, smoke checks, and recovery.
 - `deploy/systemd/tone-of-voice-telegram-bot.service.example` provides the first host service template.
-- Remaining operator step: configure secrets on the target host and complete a live phone smoke.
+- Production is enabled on the target AWS host as `tone-of-voice-telegram-bot.service`.
+- The first live smoke in `<your group>` confirmed both Telegram delivery and Anthropic draft generation.
 
 ## Step 6 - Cross-Platform Expansion
 

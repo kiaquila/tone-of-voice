@@ -2,12 +2,12 @@
 
 ## Goal
 
-Use the existing Anthropic API key shared with `vb-influencer` for live draft generation so the Telegram bot can run without requiring a separate OpenAI key.
+Use an existing Anthropic API key for live draft generation so the Telegram bot can run without requiring a separate OpenAI key.
 
 ## Requirements
 
 - Live draft generation must call the Anthropic Messages API.
-- The runtime must read `ANTHROPIC_API_KEY` from the normal env loading path, including the sibling `vb-influencer` fallback.
+- The runtime must read `ANTHROPIC_API_KEY` from the normal env loading path, including an explicit fallback env path when configured.
 - The default model must be an Anthropic model, with CLI/request/env overrides still supported.
 - Dry-run mode must remain fully offline and must not require model credentials.
 - Draft artifacts must continue recording backend and model metadata.

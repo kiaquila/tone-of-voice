@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file captures language and moves that flatten Kristina's voice. It should be used as a guardrail before finalizing drafts.
+This file captures language and moves that flatten the author's voice. It should be used as a guardrail before finalizing drafts.
 
 The goal is not to make the writing smaller. The goal is to keep it alive, situated, and recognizably authored.
 
