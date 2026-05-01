@@ -91,6 +91,18 @@ Optional:
 
 The env loader checks this repository's `.env` first. Set `TONE_OF_VOICE_FALLBACK_ENV` or pass `--env-file` explicitly to reuse credentials from another local project.
 
+### Migration: session stem rename
+
+Earlier revisions of the export tooling resolved Telethon sessions to a project-specific default stem. The default has been renamed to `telegram_session` to keep the public repository free of local identifiers. The Telegram bot itself is unaffected: it pins its own `tone_of_voice_bot` session name.
+
+If you are upgrading from a previous deployment and have a `.session` file in the repository root with a different stem, pin the existing name before restarting any caller of `resolve_session_stem` (e.g. `scripts/export_telegram_posts.py`):
+
+```bash
+export TELEGRAM_SESSION_NAME=<existing-session-stem>
+```
+
+`resolve_session_stem` now prints a stderr warning when the default session file is missing but another `.session` file is present in the repo root, so a missed migration becomes visible instead of silently re-prompting for a fresh Telegram login.
+
 ## Storage
 
 Default state root:

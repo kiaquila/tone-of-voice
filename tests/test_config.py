@@ -23,6 +23,39 @@ class ResolveSessionStemTest(unittest.TestCase):
             stem = config.resolve_session_stem()
         self.assertTrue(stem.endswith("betagamma"))
 
+    def test_warns_when_legacy_session_exists_without_explicit_name(self) -> None:
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            session_dir = Path(td)
+            (session_dir / "legacy_session.session").touch()
+            with mock.patch.dict(os.environ, {}, clear=False):
+                os.environ.pop("TELEGRAM_SESSION_NAME", None)
+                with mock.patch.object(config, "repo_root", return_value=session_dir):
+                    captured = io.StringIO()
+                    with mock.patch("sys.stderr", captured):
+                        config.resolve_session_stem()
+                    output = captured.getvalue()
+        self.assertIn("legacy_session", output)
+        self.assertIn("TELEGRAM_SESSION_NAME", output)
+
+    def test_no_warning_when_explicit_name_is_provided(self) -> None:
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            session_dir = Path(td)
+            (session_dir / "legacy_session.session").touch()
+            with mock.patch.dict(
+                os.environ, {"TELEGRAM_SESSION_NAME": "explicit"}, clear=False
+            ):
+                with mock.patch.object(config, "repo_root", return_value=session_dir):
+                    captured = io.StringIO()
+                    with mock.patch("sys.stderr", captured):
+                        config.resolve_session_stem()
+                    self.assertEqual(captured.getvalue(), "")
+
 
 class LoadProjectEnvTest(unittest.TestCase):
     def test_explicit_missing_file_raises(self) -> None:

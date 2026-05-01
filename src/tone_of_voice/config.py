@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -59,9 +60,36 @@ def resolve_session_stem(
     session_name: str | None = None,
     session_dir: str | None = None,
 ) -> str:
-    name = session_name or os.getenv("TELEGRAM_SESSION_NAME", "telegram_session")
+    explicit_name = session_name or os.getenv("TELEGRAM_SESSION_NAME") or None
+    name = explicit_name or "telegram_session"
 
     if session_dir:
         return str(Path(session_dir).expanduser().resolve() / name)
 
-    return str(repo_root() / name)
+    target_dir = repo_root()
+    resolved = target_dir / name
+
+    # The previous default session stem was renamed during anonymization.
+    # When the caller has not opted in to a specific name and the new
+    # default file is missing, surface any pre-existing session files so an
+    # operator carrying over an authenticated session learns to pin
+    # TELEGRAM_SESSION_NAME instead of silently starting a fresh login.
+    if explicit_name is None and not resolved.with_suffix(".session").exists():
+        try:
+            legacy = sorted(
+                p for p in target_dir.glob("*.session") if p.stem != name
+            )
+        except OSError:
+            legacy = []
+        if legacy:
+            stems = ", ".join(p.stem for p in legacy)
+            print(
+                f"warning: resolve_session_stem: default session "
+                f"{resolved}.session does not exist; found other session "
+                f"file(s) in {target_dir} ({stems}). Set "
+                f"TELEGRAM_SESSION_NAME or pass --session-name to choose "
+                f"one explicitly.",
+                file=sys.stderr,
+            )
+
+    return str(resolved)
