@@ -145,8 +145,9 @@ Goals:
 Deliverables:
 
 - Telegram bot handlers
-- draft, revise, approve flows
-- publish-ready text handoff
+- draft, revise, approve, final-capture, and stat flows
+- publish-ready text handoff without auto-publishing
+- feedback-memory learning signal from captured final versions
 - deployment and smoke checks
 
 Status notes:
@@ -157,6 +158,8 @@ Status notes:
 - Production is enabled on the target AWS host as the `tone-of-voice-telegram-bot.service` systemd service.
 - The runner defaults to a stale-update guard so restarts do not answer old queued Telegram commands.
 - Production deploy now follows a GitHub OIDC + S3 + AWS SSM release pattern and manages the bot through systemd.
+- `/final` captures pasted final text or a Telegram post link into bot-local feedback storage.
+- `/stat` reports fit-score trend and whether recent final versions are being used as feedback memory in future drafts.
 
 ### Phase 5 — Cross-Platform Expansion
 
