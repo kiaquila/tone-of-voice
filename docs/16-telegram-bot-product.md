@@ -35,7 +35,11 @@ Good requests include the angle, rough facts, desired mood, and any constraint t
 /draft@<your bot> короткий пост о том, что бот для черновиков запущен; акцент на human-in-the-loop, без пафоса
 ```
 
-After a draft exists, use `/revise <instruction>` or send a plain text revision request. Use `/approve` when the draft is ready for manual handoff, or `/cancel` to clear the active draft without saving approval history.
+After a draft exists, use `/revise <instruction>` or send a plain text
+revision request. You can also send `/revise` by itself and then provide the
+revision instruction as the next plain message. Use `/approve` when the draft
+is ready for manual handoff, or `/cancel` to clear the active draft without
+saving approval history.
 
 After manual edits, capture the final version:
 
@@ -50,6 +54,20 @@ topic/thread links are supported. The bot will try to read the post text through
 Telethon and will ask for pasted text if the post is not visible to the bot.
 If the final text merely contains a Telegram URL, the bot keeps the pasted text
 as the final version instead of fetching the linked post.
+Telegram link reads use the bot's Telethon session visibility, not the original
+sender's personal subscriptions. In the current allowlisted personal-bot setup,
+send only links the bot account is allowed to read. Before broad multi-user use,
+disable link fetching or add per-user visibility checks.
+
+If you already captured the final version and then edited it again, overwrite
+the same draft/final pair instead of creating a duplicate:
+
+```text
+/final --replace <corrected final post text or Telegram link>
+```
+
+For long replacements, send `/final --replace` first and then send the corrected
+final version as the next plain message.
 
 Use `/stat` to inspect this chat's captured feedback count, latest fit score,
 rolling score trend, and whether feedback memory is being used in future drafts.
@@ -57,15 +75,16 @@ rolling score trend, and whether feedback memory is being used in future drafts.
 ## Commands
 
 - `/draft <idea>` creates a new Telegram draft from the idea. Refuses if you already have an active in-progress draft; send `/cancel` or `/approve` first.
-- `/revise <instruction>` revises the active draft while preserving prior context.
+- `/revise <instruction>` revises the active draft while preserving prior context. `/revise` without text waits for the next plain message as the revision instruction.
 - `/approve` saves the current draft to review history for manual handoff and clears the active session so the next `/draft` starts fresh.
 - `/final <text or Telegram link>` captures the final edited version against the active draft or the latest approved draft from this chat. `/final` without text waits for the next plain message as the final version.
+- `/final --replace <text or Telegram link>` overwrites the existing captured final for the current draft or latest finalized draft. `/final --replace` without text waits for the next plain message as the replacement.
 - `/stat` shows same-chat feedback metrics, fit-score trend, and the current learning signal.
 - `/status` shows the active session.
 - `/cancel` clears the active session.
 - `/help` lists commands.
 
-If a chat already has an active draft, a plain text message is treated as a revision request. If the chat is waiting after `/final`, the next plain text message is captured as the final version instead.
+If a chat already has an active draft, a plain text message is treated as a revision request. If the chat is waiting after `/revise`, the next plain text message is used as the revision instruction. If the chat is waiting after `/final` or `/final --replace`, the next plain text message is captured as the final version or replacement instead.
 
 In the production group, use the short command form: `/draft <idea>`.
 The handler also accepts `/draft@<your bot> <idea>`, but the username suffix is
@@ -150,6 +169,7 @@ Layout:
 - `history/<timestamp>-chat-<id>-event-<n>-<rand>.json` stores approved review history. The history directory is append-only; rotate or archive externally if it grows too large.
 - `drafts/` stores prompt and generation artifacts from the drafting pipeline. `/cancel` clears the session JSON but leaves draft artifacts in place for audit; remove them manually if no longer needed.
 - `feedback/raw/` and `feedback/analysis/` store Telegram-captured draft/final pairs and normalized edit metrics from `/final`.
+- `feedback/index/source-map.json` maps draft artifact paths to feedback records for fast duplicate and replace checks.
 
 These are working artifacts and should not be committed.
 

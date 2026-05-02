@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import secrets
 from collections import Counter
@@ -227,15 +228,21 @@ def write_feedback_pair(
 
     raw_path = raw_dir / f"{record['id']}.json"
     analysis_path = analysis_dir / f"{record['id']}.json"
-    raw_path.write_text(
+    atomic_write_text(
+        raw_path,
         json.dumps(record, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
     )
-    analysis_path.write_text(
+    atomic_write_text(
+        analysis_path,
         json.dumps(analysis, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
     )
     return raw_path, analysis_path, record, analysis
+
+
+def atomic_write_text(path: Path, data: str) -> None:
+    tmp = path.with_name(f"{path.name}.{secrets.token_hex(4)}.tmp")
+    tmp.write_text(data, encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def compute_revision_metrics(before: str, after: str) -> dict[str, Any]:

@@ -14,6 +14,9 @@ Feedback artifacts live under `data/working/feedback/`, which is ignored by git:
 
 - `raw/` stores human-readable draft/final records with the original text.
 - `analysis/` stores normalized metrics derived from the raw record.
+- `index/source-map.json` maps `source.draft_artifact_path` to the current
+  feedback record so bot duplicate and replacement checks do not scan every raw
+  record on each `/final`.
 
 Separating raw text from analysis keeps future evals from mixing source material, notes, and computed metrics in one blob.
 
@@ -112,6 +115,11 @@ draft-to-final metrics, and clears the active session. It rejects duplicate
 `/final` captures for the same draft artifact.
 If a pasted final text contains a Telegram URL alongside other text, the pasted
 text wins and no link fetch is attempted.
+
+If the final was captured too early, use `/final --replace <text or Telegram
+link>` to overwrite the existing raw/analysis pair for the same draft artifact.
+For long replacements, send `/final --replace` first and then send the corrected
+final text as the next plain message.
 
 Use `/stat` to inspect same-chat feedback pairs, latest fit score, rolling
 trend, median edit percentages, common correction tags, and the learning signal.
