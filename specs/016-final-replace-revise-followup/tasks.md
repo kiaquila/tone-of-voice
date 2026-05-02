@@ -10,3 +10,6 @@
 - [x] Label feedback memory samples as inert style references.
 - [x] Add explicit tests for `/cancel` during `awaiting_final`, `published_at`, generic errors, index use, and inert memory context.
 - [x] Document Telegram link resolver visibility boundaries.
+- [x] Make `write_feedback_pair` atomic per file so a partial replace cannot leave a half-written raw or analysis JSON.
+- [x] Stream `BotStateStore.review_history` and resolve replace candidates against a single feedback-source index lookup.
+- [x] Add tests for `/cancel` during `awaiting_revision` and `awaiting_final_replace`, and for `/draft` blocked while awaiting revision.

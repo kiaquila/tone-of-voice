@@ -508,6 +508,55 @@ class TelegramDraftAssistantTest(unittest.TestCase):
             self.assertIn("Current draft session cleared", "\n".join(replies))
             self.assertIsNone(store.load(1))
 
+    def test_cancel_clears_awaiting_revision_session(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            store = BotStateStore(td)
+            assistant = TelegramDraftAssistant(store=store, generator=fake_generator)
+            assistant.handle_text(1, "/draft cancel revise")
+            assistant.handle_text(1, "/revise")
+            session = store.load(1)
+            self.assertIsNotNone(session)
+            assert session is not None
+            self.assertEqual(session.status, "awaiting_revision")
+
+            replies = assistant.handle_text(1, "/cancel")
+
+            self.assertIn("Current draft session cleared", "\n".join(replies))
+            self.assertIsNone(store.load(1))
+
+    def test_cancel_clears_awaiting_final_replace_session(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            store = BotStateStore(td)
+            assistant = TelegramDraftAssistant(store=store, generator=fake_generator)
+            assistant.handle_text(1, "/draft cancel replace")
+            assistant.handle_text(1, "/final original final")
+            assistant.handle_text(1, "/final --replace")
+            session = store.load(1)
+            self.assertIsNotNone(session)
+            assert session is not None
+            self.assertEqual(session.status, "awaiting_final_replace")
+
+            replies = assistant.handle_text(1, "/cancel")
+
+            self.assertIn("Current draft session cleared", "\n".join(replies))
+            self.assertIsNone(store.load(1))
+
+    def test_draft_blocked_during_awaiting_revision(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            store = BotStateStore(td)
+            assistant = TelegramDraftAssistant(store=store, generator=fake_generator)
+            assistant.handle_text(1, "/draft first idea")
+            assistant.handle_text(1, "/revise")
+
+            replies = assistant.handle_text(1, "/draft second idea")
+
+            joined = "\n".join(replies)
+            self.assertIn("active draft", joined)
+            session = store.load(1)
+            self.assertIsNotNone(session)
+            assert session is not None
+            self.assertEqual(session.status, "awaiting_revision")
+
     def test_final_uses_telegram_link_resolver(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             store = BotStateStore(td)

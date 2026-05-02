@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import itertools
 import json
 import logging
 import os
 import re
 import secrets
 import threading
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -22,6 +24,7 @@ from tone_of_voice.drafting import (
 )
 from tone_of_voice.feedback import (
     FeedbackInput,
+    atomic_write_text,
     build_feedback_analysis,
     summarize_feedback,
     write_feedback_pair,
@@ -129,7 +132,7 @@ class BotStateStore:
     def save(self, session: BotSession) -> Path:
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
         path = self._session_path(session.chat_id)
-        _atomic_write_text(
+        atomic_write_text(
             path,
             json.dumps(session.to_dict(), ensure_ascii=False, indent=2) + "\n",
         )
@@ -148,7 +151,7 @@ class BotStateStore:
             self.history_dir
             / f"{stamp}-chat-{session.chat_id}-event-{len(session.events)}-{suffix}.json"
         )
-        _atomic_write_text(
+        atomic_write_text(
             path,
             json.dumps(session.to_dict(), ensure_ascii=False, indent=2) + "\n",
         )
@@ -159,20 +162,17 @@ class BotStateStore:
             return session
         return None
 
-    def review_history(self, chat_id: int) -> tuple[BotSession, ...]:
+    def review_history(self, chat_id: int) -> Iterator[BotSession]:
         if not self.history_dir.exists():
-            return ()
-
-        sessions = []
+            return
         pattern = f"*-chat-{chat_id}-event-*.json"
         for path in sorted(self.history_dir.glob(pattern), reverse=True):
             try:
-                sessions.append(
-                    BotSession.from_mapping(json.loads(path.read_text(encoding="utf-8")))
+                yield BotSession.from_mapping(
+                    json.loads(path.read_text(encoding="utf-8"))
                 )
             except (OSError, json.JSONDecodeError, KeyError, ValueError) as exc:
                 logger.warning("Skipping unreadable bot history file %s: %s", path, exc)
-        return tuple(sessions)
 
     def feedback_exists_for_source(self, source_draft_artifact: str | None) -> bool:
         return self.feedback_record_for_source(source_draft_artifact) is not None
@@ -207,6 +207,14 @@ class BotStateStore:
             if not entry:
                 return None
             return self._feedback_match_from_index_entry(source_draft_artifact, entry)
+
+    def feedback_index_sources(self) -> set[str]:
+        with self._feedback_index_lock:
+            index = self._load_feedback_source_index(rebuild_if_missing=True)
+            sources = index.get("sources") if isinstance(index, dict) else None
+            if not isinstance(sources, dict):
+                return set()
+            return {key for key in sources.keys() if isinstance(key, str)}
 
     def upsert_feedback_source_index(
         self,
@@ -283,7 +291,7 @@ class BotStateStore:
         index.setdefault("sources", {})
         index["raw_snapshot"] = self._feedback_raw_snapshot()
         self.feedback_index_path.parent.mkdir(parents=True, exist_ok=True)
-        _atomic_write_text(
+        atomic_write_text(
             self.feedback_index_path,
             json.dumps(index, ensure_ascii=False, indent=2) + "\n",
         )
@@ -387,12 +395,6 @@ class BotStateStore:
 
     def _session_path(self, chat_id: int) -> Path:
         return self.sessions_dir / f"chat-{chat_id}.json"
-
-
-def _atomic_write_text(path: Path, data: str) -> None:
-    tmp = path.with_name(f"{path.name}.{secrets.token_hex(4)}.tmp")
-    tmp.write_text(data, encoding="utf-8")
-    os.replace(tmp, path)
 
 
 DraftGenerator = Callable[[DraftRequest], DraftResult]
@@ -773,15 +775,19 @@ class TelegramDraftAssistant:
         if session and session.draft and not replace_requested:
             return session
 
-        history = self.store.review_history(chat_id)
         if replace_requested:
-            for candidate in ((session,) if session and session.draft else ()) + history:
-                if self.store.feedback_record_for_source(candidate.draft_artifact_path):
+            indexed_sources = self.store.feedback_index_sources()
+            active = (session,) if session and session.draft else ()
+            for candidate in itertools.chain(active, self.store.review_history(chat_id)):
+                if (
+                    candidate.draft_artifact_path
+                    and candidate.draft_artifact_path in indexed_sources
+                ):
                     return candidate
             if session and session.draft:
                 return session
 
-        for candidate in history:
+        for candidate in self.store.review_history(chat_id):
             return candidate
         return None
 
