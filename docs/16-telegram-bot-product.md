@@ -54,6 +54,10 @@ topic/thread links are supported. The bot will try to read the post text through
 Telethon and will ask for pasted text if the post is not visible to the bot.
 If the final text merely contains a Telegram URL, the bot keeps the pasted text
 as the final version instead of fetching the linked post.
+Telegram link reads use the bot's Telethon session visibility, not the original
+sender's personal subscriptions. In the current allowlisted personal-bot setup,
+send only links the bot account is allowed to read. Before broad multi-user use,
+disable link fetching or add per-user visibility checks.
 
 If you already captured the final version and then edited it again, overwrite
 the same draft/final pair instead of creating a duplicate:
@@ -165,6 +169,7 @@ Layout:
 - `history/<timestamp>-chat-<id>-event-<n>-<rand>.json` stores approved review history. The history directory is append-only; rotate or archive externally if it grows too large.
 - `drafts/` stores prompt and generation artifacts from the drafting pipeline. `/cancel` clears the session JSON but leaves draft artifacts in place for audit; remove them manually if no longer needed.
 - `feedback/raw/` and `feedback/analysis/` store Telegram-captured draft/final pairs and normalized edit metrics from `/final`.
+- `feedback/index/source-map.json` maps draft artifact paths to feedback records for fast duplicate and replace checks.
 
 These are working artifacts and should not be committed.
 

@@ -14,6 +14,9 @@ Feedback artifacts live under `data/working/feedback/`, which is ignored by git:
 
 - `raw/` stores human-readable draft/final records with the original text.
 - `analysis/` stores normalized metrics derived from the raw record.
+- `index/source-map.json` maps `source.draft_artifact_path` to the current
+  feedback record so bot duplicate and replacement checks do not scan every raw
+  record on each `/final`.
 
 Separating raw text from analysis keeps future evals from mixing source material, notes, and computed metrics in one blob.
 
