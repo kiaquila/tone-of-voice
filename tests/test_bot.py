@@ -732,6 +732,33 @@ class TelegramDraftAssistantTest(unittest.TestCase):
             self.assertEqual(raw_records[0]["source"]["draft_artifact_path"], "/tmp/fallback-1.json")
             self.assertEqual(raw_records[0]["final_text"], "corrected first final")
 
+    def test_final_replace_rebuilds_stale_feedback_index(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            store = BotStateStore(td)
+            assistant = TelegramDraftAssistant(store=store, generator=fake_generator)
+            assistant.handle_text(1, "/draft stale index")
+            assistant.handle_text(1, "/final captured final")
+
+            store.feedback_index_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "sources": {},
+                        "raw_snapshot": {"raw_dir_mtime_ns": 0, "raw_file_count": 0},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            replies = assistant.handle_text(1, "/final --replace corrected final")
+
+            self.assertIn("Feedback replaced", "\n".join(replies))
+            raw_files = list((store.feedback_dir / "raw").glob("*.json"))
+            self.assertEqual(len(raw_files), 1)
+            record = json.loads(raw_files[0].read_text(encoding="utf-8"))
+            self.assertEqual(record["final_text"], "corrected final")
+
     def test_final_replace_preserves_active_newer_draft(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             store = BotStateStore(td)

@@ -211,6 +211,8 @@ class BotStateStore:
     def feedback_index_sources(self) -> set[str]:
         with self._feedback_index_lock:
             index = self._load_feedback_source_index(rebuild_if_missing=True)
+            if self._feedback_source_index_may_be_stale(index):
+                index = self.rebuild_feedback_source_index()
             sources = index.get("sources") if isinstance(index, dict) else None
             if not isinstance(sources, dict):
                 return set()
