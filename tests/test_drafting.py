@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -328,6 +329,62 @@ class ArtifactWritingTest(unittest.TestCase):
                 json.loads(second_artifact_path.read_text(encoding="utf-8"))["draft"],
                 "second",
             )
+
+
+class PromptContextPrivacyTest(unittest.TestCase):
+    def test_prompt_context_excludes_feedback_final(self) -> None:
+        sentinel = "SECRET-FEEDBACK-FINAL-LEAK-CHECK"
+        with tempfile.TemporaryDirectory() as td:
+            workdir = Path(td)
+            for rel_path in (
+                "docs/00-principles.md",
+                "docs/01-current-voice-snapshot.md",
+                "docs/04-platform-adaptation.md",
+                "docs/10-reference-library.md",
+                "docs/12-stop-list.md",
+                "docs/13-drafting-recipes.md",
+            ):
+                source = repo_root() / rel_path
+                target = workdir / rel_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+
+            feedback_dir = workdir / "data/working/feedback/raw"
+            feedback_dir.mkdir(parents=True, exist_ok=True)
+            (feedback_dir / "sample.json").write_text(
+                json.dumps(
+                    {
+                        "id": "sample",
+                        "platform": "telegram",
+                        "request": {
+                            "platform": "telegram",
+                            "angle": "leak check angle",
+                        },
+                        "classification": {},
+                        "final_text": sentinel,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            request = DraftRequest.from_mapping(
+                {
+                    "platform": "telegram",
+                    "angle": "Share how much the current multi-agent setup costs",
+                    "topics": ["agents", "cost", "setup"],
+                    "post_type": "tool_breakdown",
+                    "retrieval_strategy": "style_memory",
+                    "max_references": 5,
+                }
+            )
+
+            bundle = build_prompt_bundle(
+                request,
+                root=workdir,
+                model="test-model",
+            )
+
+            self.assertNotIn(sentinel, bundle.prompt)
 
 
 class UnifiedTokenizerTest(unittest.TestCase):

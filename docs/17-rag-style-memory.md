@@ -29,6 +29,30 @@ Feedback records borrow the useful part of margin-style annotation workflows:
 a concrete text fragment becomes a scoped style signal. Positive final versions
 are examples to imitate. Corrective records are guardrails.
 
+## Data Flow and Privacy
+
+The style-memory index ingests broader data than what is sent to the model.
+Two boundaries matter:
+
+- Feedback dirs are auto-discovered from `data/working/feedback` and
+  `data/working/bot/feedback` whenever `build_style_memory_index` runs without
+  an explicit `feedback_dirs` argument.
+- `feedback_final` records (your previous final post text) are ingested into
+  the index but are EXCLUDED from the drafting prompt context by default.
+  This avoids self-imitation drift and unnecessary data flow to model
+  providers. The allowlist of source types eligible for the drafting prompt
+  lives in `tone_of_voice.drafting.PROMPT_CONTEXT_SOURCE_TYPES` and includes
+  reference examples, voice principles and snapshots, platform playbooks,
+  stop-list rules, drafting recipes, and `feedback_correction` signals.
+- `feedback_correction` records ARE included in the prompt context. They act
+  as guardrails by telling the model which past tone or structure mistakes
+  must be avoided.
+
+The retrieval experiment in `evaluate_retrieval_suite` calls
+`build_style_memory_index` with `feedback_dirs=[]` so the offline harness
+remains deterministic regardless of locally captured feedback. See
+`src/tone_of_voice/retrieval_experiments.py` (`evaluate_retrieval_suite`).
+
 ## Margin-Inspired Annotation Model
 
 The Margin-inspired part is the memory shape, not the full product UI. The first

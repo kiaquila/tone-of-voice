@@ -25,6 +25,19 @@ from tone_of_voice.style_memory import (
 
 ALLOWED_PLATFORMS = {"telegram", "threads", "linkedin"}
 ALLOWED_RETRIEVAL_STRATEGIES = {"heuristic", "style_memory", "hybrid"}
+# Source types eligible for the drafting prompt context. `feedback_final`
+# (raw user final post text) is intentionally excluded so that previous final
+# posts do not leak back into the prompt and cause self-imitation drift or
+# unnecessary data flow to model providers.
+PROMPT_CONTEXT_SOURCE_TYPES = (
+    "reference_example",
+    "voice_principle",
+    "voice_snapshot",
+    "platform_playbook",
+    "stop_rule",
+    "drafting_recipe",
+    "feedback_correction",
+)
 DEFAULT_MODEL = "claude-sonnet-4-6"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 4096
 ANTHROPIC_API_VERSION = "2023-06-01"
@@ -377,9 +390,17 @@ def build_prompt_bundle(
             root=base,
             reference_entries=library.entries,
         )
+        prompt_context_query = style_memory_query_from_request(request)
         style_memory_matches = retrieve_style_memory(
             style_index,
-            style_memory_query_from_request(request),
+            StyleMemoryQuery(
+                text=prompt_context_query.text,
+                platform=prompt_context_query.platform,
+                post_type=prompt_context_query.post_type,
+                topics=prompt_context_query.topics,
+                mood=prompt_context_query.mood,
+                source_types=PROMPT_CONTEXT_SOURCE_TYPES,
+            ),
             limit=6,
         )
         reference_query = style_memory_query_from_request(request)
