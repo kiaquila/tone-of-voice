@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import llama_index.core as llama_index_core
 from llama_index.core import Document, StorageContext, VectorStoreIndex, load_index_from_storage
 from llama_index.core.embeddings import BaseEmbedding
 from llama_index.core.schema import NodeWithScore
@@ -25,6 +26,10 @@ from tone_of_voice.style_memory import (
 LLAMA_INDEX_SCHEMA_VERSION = 1
 DEFAULT_LLAMA_INDEX_DIR = "data/working/style-memory/llama-index"
 LLAMA_INDEX_MANIFEST = "tone-of-voice-manifest.json"
+# Files that StorageContext.persist() always writes alongside the manifest.
+# manifest_matches() checks they exist so a partially deleted persist dir
+# fails closed and triggers a clean rebuild instead of raising at load time.
+LLAMA_INDEX_PERSISTED_FILES = ("docstore.json", "index_store.json")
 
 
 @dataclass(frozen=True)
@@ -50,6 +55,9 @@ class HashingStyleEmbedding(BaseEmbedding):
         return self._embed(query)
 
     def _get_text_embedding(self, text: str) -> list[float]:
+        return self._embed(text)
+
+    async def _aget_text_embedding(self, text: str) -> list[float]:
         return self._embed(text)
 
     def _get_text_embeddings(self, texts: list[str]) -> list[list[float]]:
@@ -84,17 +92,24 @@ def build_or_load_llama_index(
 
     fingerprint = llama_index_fingerprint(style_index)
     manifest_path = target_dir / LLAMA_INDEX_MANIFEST
-    if not rebuild and manifest_matches(manifest_path, fingerprint):
-        storage_context = StorageContext.from_defaults(persist_dir=str(target_dir))
-        index = load_index_from_storage(
-            storage_context,
-            embed_model=HashingStyleEmbedding(),
-        )
-        return LlamaIndexStyleMemory(
-            index=index,
-            persist_dir=target_dir,
-            fingerprint=fingerprint,
-        )
+    if not rebuild and manifest_matches(manifest_path, fingerprint, target_dir):
+        try:
+            storage_context = StorageContext.from_defaults(persist_dir=str(target_dir))
+            index = load_index_from_storage(
+                storage_context,
+                embed_model=HashingStyleEmbedding(),
+            )
+        except Exception:
+            # Persisted store is unreadable (corrupted JSON, schema drift inside
+            # the pinned llama-index-core minor, partial write). Fall through to
+            # a clean rebuild instead of bubbling the error up to drafting.
+            pass
+        else:
+            return LlamaIndexStyleMemory(
+                index=index,
+                persist_dir=target_dir,
+                fingerprint=fingerprint,
+            )
 
     documents = documents_from_style_memory(style_index)
     storage_context = StorageContext.from_defaults()
@@ -265,6 +280,7 @@ def llama_index_fingerprint(style_index: StyleMemoryIndex) -> str:
     payload = {
         "schema_version": LLAMA_INDEX_SCHEMA_VERSION,
         "embedding": HashingStyleEmbedding.class_name(),
+        "llama_index_core_version": getattr(llama_index_core, "__version__", "unknown"),
         "records": [record.to_dict() for record in style_index.records],
     }
     return hashlib.sha256(
@@ -272,15 +288,21 @@ def llama_index_fingerprint(style_index: StyleMemoryIndex) -> str:
     ).hexdigest()
 
 
-def manifest_matches(path: Path, fingerprint: str) -> bool:
+def manifest_matches(path: Path, fingerprint: str, persist_dir: Path | None = None) -> bool:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return False
-    return (
-        data.get("schema_version") == LLAMA_INDEX_SCHEMA_VERSION
-        and data.get("fingerprint") == fingerprint
-    )
+    if (
+        data.get("schema_version") != LLAMA_INDEX_SCHEMA_VERSION
+        or data.get("fingerprint") != fingerprint
+    ):
+        return False
+    if persist_dir is not None:
+        for filename in LLAMA_INDEX_PERSISTED_FILES:
+            if not (persist_dir / filename).is_file():
+                return False
+    return True
 
 
 def write_manifest(path: Path, fingerprint: str, record_count: int) -> None:
@@ -289,5 +311,6 @@ def write_manifest(path: Path, fingerprint: str, record_count: int) -> None:
         "fingerprint": fingerprint,
         "record_count": record_count,
         "embedding": HashingStyleEmbedding.class_name(),
+        "llama_index_core_version": getattr(llama_index_core, "__version__", "unknown"),
     }
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
