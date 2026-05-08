@@ -82,13 +82,15 @@ def build_query(args: argparse.Namespace) -> StyleMemoryQuery:
     if args.request:
         request = load_request(args.request)
         query = style_memory_query_from_request(request)
-        return StyleMemoryQuery(
-            text=query.text,
-            platform=args.platform or query.platform,
-            post_type=args.post_type or query.post_type,
-            topics=tuple(args.topics or query.topics),
-            mood=tuple(args.mood or query.mood),
-            source_types=tuple(args.source_types or query.source_types),
+        return StyleMemoryQuery.from_mapping(
+            {
+                "text": query.text,
+                "platform": args.platform or query.platform,
+                "post_type": args.post_type or query.post_type,
+                "topics": list(args.topics or query.topics),
+                "mood": list(args.mood or query.mood),
+                "source_types": list(args.source_types or query.source_types),
+            }
         )
     if not args.query:
         raise SystemExit("Provide a query or --request.")
