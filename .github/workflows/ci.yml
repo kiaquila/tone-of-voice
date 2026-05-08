@@ -68,7 +68,35 @@ jobs:
           python scripts/run_regression_evals.py
 
       - name: Run retrieval experiment slice
-        run: python scripts/run_retrieval_experiments.py
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          should_run=false
+          if [ "$EVENT_NAME" = "push" ]; then
+            should_run=true
+          else
+            changed="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
+            while IFS= read -r f; do
+              case "$f" in
+                src/tone_of_voice/style_memory.py|src/tone_of_voice/retrieval_experiments.py|src/tone_of_voice/drafting.py|scripts/run_retrieval_experiments.py|scripts/build_style_memory_index.py|scripts/query_style_memory.py|evals/retrieval/*|docs/10-reference-library.md|docs/00-principles.md|docs/01-current-voice-snapshot.md|docs/04-platform-adaptation.md|docs/12-stop-list.md|docs/13-drafting-recipes.md|docs/17-rag-style-memory.md)
+                  should_run=true
+                  break
+                  ;;
+              esac
+            done <<< "$changed"
+          fi
+
+          if [ "$should_run" = "false" ]; then
+            echo "No style-memory, retrieval, or voice-doc changes detected; skipping retrieval experiment slice."
+            exit 0
+          fi
+
+          python scripts/run_retrieval_experiments.py
 
       - name: Smoke-check CLI help
         run: |
