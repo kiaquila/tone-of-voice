@@ -161,6 +161,11 @@ runner reports:
 - failed cases per variant
 - the current winner
 
+The seed suite currently uses `k=3`. That is intentional: drafting asks for
+3 to 5 reference examples, and the lower bound keeps the retrieval eval strict.
+A relevant style signal should fit into the compact prompt context instead of
+only appearing after extra padding.
+
 This is deliberately an offline retrieval A/B harness. It does not call a model.
 Once the retrieval variants are stable, generated-text A/B tests can add model
 outputs, draft/final edit distance, and human preference labels on top.

@@ -19,7 +19,7 @@ class RetrievalExperimentSuiteTest(unittest.TestCase):
         report = format_retrieval_report(result)
 
         self.assertTrue(result["passed"], report)
-        self.assertEqual(result["total_cases"], 3)
+        self.assertEqual(result["total_cases"], 4)
         self.assertIn(
             result["winner"],
             {"heuristic", "style_memory", "hybrid", None},
@@ -36,6 +36,22 @@ class RetrievalExperimentSuiteTest(unittest.TestCase):
         # If every variant produces the same (recall@k, mrr), the suite
         # provides no signal and any retrieval regression would silently pass.
         self.assertGreater(len(metric_tuples), 1, format_retrieval_report(result))
+
+    def test_seed_suite_separates_style_memory_from_hybrid(self) -> None:
+        result = evaluate_retrieval_suite(load_retrieval_suite(), root=repo_root())
+        aggregate = result["aggregate"]
+
+        self.assertNotEqual(
+            (
+                aggregate["style_memory"]["mean_recall_at_k"],
+                aggregate["style_memory"]["mean_precision_at_k"],
+            ),
+            (
+                aggregate["hybrid"]["mean_recall_at_k"],
+                aggregate["hybrid"]["mean_precision_at_k"],
+            ),
+            format_retrieval_report(result),
+        )
 
     def test_choose_winner_returns_none_when_all_tied(self) -> None:
         aggregate = {

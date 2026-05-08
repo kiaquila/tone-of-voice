@@ -472,18 +472,18 @@ class StyleMemoryCacheTest(unittest.TestCase):
                 self.assertEqual(call_counter["count"], 1)
 
                 library_path = workdir / "docs/10-reference-library.md"
+                original_mtime = library_path.stat().st_mtime
                 original_text = library_path.read_text(encoding="utf-8")
                 library_path.write_text(
                     original_text + "\n<!-- updated -->\n", encoding="utf-8"
                 )
-                future = library_path.stat().st_mtime + 5
-                os.utime(library_path, (future, future))
+                os.utime(library_path, (original_mtime, original_mtime))
 
                 build_prompt_bundle(request, root=workdir, model="test-model")
                 self.assertEqual(
                     call_counter["count"],
                     2,
-                    "cache must rebuild when reference library content changes",
+                    "cache must rebuild when content changes even without an mtime bump",
                 )
             finally:
                 drafting_module.build_style_memory_index = original_builder

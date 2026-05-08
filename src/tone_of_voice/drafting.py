@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -397,40 +398,34 @@ def _style_memory_cache_fingerprint(
     base: Path,
     library: ReferenceLibrary,
 ) -> tuple[Any, ...]:
-    doc_mtimes: list[float] = []
+    doc_hashes: list[tuple[str, str]] = []
     for rel_path, *_rest in STYLE_MEMORY_DOCS:
         doc_path = base / rel_path
-        try:
-            doc_mtimes.append(doc_path.stat().st_mtime)
-        except OSError:
-            doc_mtimes.append(0.0)
+        doc_hashes.append((rel_path, _file_content_hash(doc_path)))
 
-    feedback_mtimes: list[float] = []
-    feedback_paths: list[str] = []
+    feedback_hashes: list[tuple[str, str]] = []
     for raw_dir in feedback_raw_dirs(base, DEFAULT_FEEDBACK_DIRS):
         for path in sorted(raw_dir.glob("*.json")):
-            feedback_paths.append(str(path))
-            try:
-                feedback_mtimes.append(path.stat().st_mtime)
-            except OSError:
-                feedback_mtimes.append(0.0)
+            feedback_hashes.append((str(path), _file_content_hash(path)))
 
     library_signature = tuple(entry.ref_id for entry in library.entries)
     library_path = base / "docs/10-reference-library.md"
-    try:
-        library_mtime = library_path.stat().st_mtime
-    except OSError:
-        library_mtime = 0.0
+    library_hash = _file_content_hash(library_path)
 
     return (
         str(base),
-        tuple(rel_path for rel_path, *_ in STYLE_MEMORY_DOCS),
-        tuple(doc_mtimes),
-        tuple(feedback_paths),
-        tuple(feedback_mtimes),
+        tuple(doc_hashes),
+        tuple(feedback_hashes),
         library_signature,
-        library_mtime,
+        library_hash,
     )
+
+
+def _file_content_hash(path: Path) -> str:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return "missing"
 
 
 def _get_or_build_style_memory_index(
