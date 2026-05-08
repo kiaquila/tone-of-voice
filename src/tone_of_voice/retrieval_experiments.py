@@ -300,18 +300,15 @@ def choose_winner(aggregate: dict[str, Any]) -> str | None:
             ranked[0][1]["mean_mrr"],
             ranked[0][1]["mean_precision_at_k"],
         )
-        if all(
-            (
-                item["passed"],
-                item["mean_recall_at_k"],
-                item["mean_mrr"],
-                item["mean_precision_at_k"],
-            )
-            == top_key
-            for _, item in ranked
-        ):
+        second_key = (
+            ranked[1][1]["passed"],
+            ranked[1][1]["mean_recall_at_k"],
+            ranked[1][1]["mean_mrr"],
+            ranked[1][1]["mean_precision_at_k"],
+        )
+        if second_key == top_key:
             logger.warning(
-                "retrieval experiment variants tied on sort key; no clear winner"
+                "retrieval experiment top variants tied on sort key; no clear winner"
             )
             return None
     return ranked[0][0]
