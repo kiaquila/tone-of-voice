@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import tempfile
 import unittest
@@ -430,6 +431,62 @@ class StyleMemoryCacheTest(unittest.TestCase):
 
         self.assertEqual(first_count, 1)
         self.assertEqual(second_count, 1)
+
+    def test_cache_invalidates_when_reference_library_content_changes(self) -> None:
+        request = DraftRequest.from_mapping(
+            {
+                "platform": "telegram",
+                "angle": "Share how much the current multi-agent setup costs",
+                "topics": ["agents", "cost", "setup"],
+                "post_type": "tool_breakdown",
+                "retrieval_strategy": "style_memory",
+                "max_references": 5,
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as td:
+            workdir = Path(td)
+            for rel_path in (
+                "docs/00-principles.md",
+                "docs/01-current-voice-snapshot.md",
+                "docs/04-platform-adaptation.md",
+                "docs/10-reference-library.md",
+                "docs/12-stop-list.md",
+                "docs/13-drafting-recipes.md",
+            ):
+                source = repo_root() / rel_path
+                target = workdir / rel_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+
+            call_counter = {"count": 0}
+            original_builder = drafting_module.build_style_memory_index
+
+            def counting_builder(*args, **kwargs):
+                call_counter["count"] += 1
+                return original_builder(*args, **kwargs)
+
+            try:
+                drafting_module.build_style_memory_index = counting_builder
+                build_prompt_bundle(request, root=workdir, model="test-model")
+                self.assertEqual(call_counter["count"], 1)
+
+                library_path = workdir / "docs/10-reference-library.md"
+                original_text = library_path.read_text(encoding="utf-8")
+                library_path.write_text(
+                    original_text + "\n<!-- updated -->\n", encoding="utf-8"
+                )
+                future = library_path.stat().st_mtime + 5
+                os.utime(library_path, (future, future))
+
+                build_prompt_bundle(request, root=workdir, model="test-model")
+                self.assertEqual(
+                    call_counter["count"],
+                    2,
+                    "cache must rebuild when reference library content changes",
+                )
+            finally:
+                drafting_module.build_style_memory_index = original_builder
 
 
 class UnifiedTokenizerTest(unittest.TestCase):

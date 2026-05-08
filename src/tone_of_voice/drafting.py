@@ -416,6 +416,11 @@ def _style_memory_cache_fingerprint(
                 feedback_mtimes.append(0.0)
 
     library_signature = tuple(entry.ref_id for entry in library.entries)
+    library_path = base / "docs/10-reference-library.md"
+    try:
+        library_mtime = library_path.stat().st_mtime
+    except OSError:
+        library_mtime = 0.0
 
     return (
         str(base),
@@ -424,6 +429,7 @@ def _style_memory_cache_fingerprint(
         tuple(feedback_paths),
         tuple(feedback_mtimes),
         library_signature,
+        library_mtime,
     )
 
 
