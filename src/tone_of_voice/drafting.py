@@ -13,9 +13,12 @@ from typing import Any
 
 from tone_of_voice.config import repo_root
 from tone_of_voice.style_memory import (
+    DEFAULT_FEEDBACK_DIRS,
+    STYLE_MEMORY_DOCS,
     StyleMemoryMatch,
     StyleMemoryQuery,
     build_style_memory_index,
+    feedback_raw_dirs,
     normalize_token,
     retrieve_style_memory,
     style_memory_query_from_request,
@@ -373,6 +376,80 @@ def select_references_from_memory(
     return tuple(ordered[: request.max_references])
 
 
+_STYLE_MEMORY_CACHE: dict[Any, Any] = {}
+
+
+def _style_memory_cache_disabled() -> bool:
+    raw = os.getenv("TONE_OF_VOICE_STYLE_MEMORY_CACHE", "").strip().lower()
+    return raw == "disabled"
+
+
+def _clear_style_memory_cache() -> None:
+    """Clear the in-process style-memory index cache.
+
+    Intended for tests so cached state does not leak between cases.
+    """
+
+    _STYLE_MEMORY_CACHE.clear()
+
+
+def _style_memory_cache_fingerprint(
+    base: Path,
+    library: ReferenceLibrary,
+) -> tuple[Any, ...]:
+    doc_mtimes: list[float] = []
+    for rel_path, *_rest in STYLE_MEMORY_DOCS:
+        doc_path = base / rel_path
+        try:
+            doc_mtimes.append(doc_path.stat().st_mtime)
+        except OSError:
+            doc_mtimes.append(0.0)
+
+    feedback_mtimes: list[float] = []
+    feedback_paths: list[str] = []
+    for raw_dir in feedback_raw_dirs(base, DEFAULT_FEEDBACK_DIRS):
+        for path in sorted(raw_dir.glob("*.json")):
+            feedback_paths.append(str(path))
+            try:
+                feedback_mtimes.append(path.stat().st_mtime)
+            except OSError:
+                feedback_mtimes.append(0.0)
+
+    library_signature = tuple(entry.ref_id for entry in library.entries)
+
+    return (
+        str(base),
+        tuple(rel_path for rel_path, *_ in STYLE_MEMORY_DOCS),
+        tuple(doc_mtimes),
+        tuple(feedback_paths),
+        tuple(feedback_mtimes),
+        library_signature,
+    )
+
+
+def _get_or_build_style_memory_index(
+    base: Path,
+    library: ReferenceLibrary,
+):
+    if _style_memory_cache_disabled():
+        return build_style_memory_index(
+            root=base,
+            reference_entries=library.entries,
+        )
+
+    fingerprint = _style_memory_cache_fingerprint(base, library)
+    cached = _STYLE_MEMORY_CACHE.get("entry")
+    if cached is not None and cached[0] == fingerprint:
+        return cached[1]
+
+    index = build_style_memory_index(
+        root=base,
+        reference_entries=library.entries,
+    )
+    _STYLE_MEMORY_CACHE["entry"] = (fingerprint, index)
+    return index
+
+
 def build_prompt_bundle(
     request: DraftRequest,
     *,
@@ -386,10 +463,7 @@ def build_prompt_bundle(
     if retrieval_strategy == "heuristic":
         references = select_references(request, library)
     else:
-        style_index = build_style_memory_index(
-            root=base,
-            reference_entries=library.entries,
-        )
+        style_index = _get_or_build_style_memory_index(base, library)
         prompt_context_query = style_memory_query_from_request(request)
         style_memory_matches = retrieve_style_memory(
             style_index,

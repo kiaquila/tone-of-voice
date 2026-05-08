@@ -332,6 +332,12 @@ class ArtifactWritingTest(unittest.TestCase):
 
 
 class PromptContextPrivacyTest(unittest.TestCase):
+    def setUp(self) -> None:
+        drafting_module._clear_style_memory_cache()
+
+    def tearDown(self) -> None:
+        drafting_module._clear_style_memory_cache()
+
     def test_prompt_context_excludes_feedback_final(self) -> None:
         sentinel = "SECRET-FEEDBACK-FINAL-LEAK-CHECK"
         with tempfile.TemporaryDirectory() as td:
@@ -385,6 +391,45 @@ class PromptContextPrivacyTest(unittest.TestCase):
             )
 
             self.assertNotIn(sentinel, bundle.prompt)
+
+
+class StyleMemoryCacheTest(unittest.TestCase):
+    def setUp(self) -> None:
+        drafting_module._clear_style_memory_cache()
+
+    def tearDown(self) -> None:
+        drafting_module._clear_style_memory_cache()
+
+    def test_build_prompt_bundle_caches_style_memory_index(self) -> None:
+        request = DraftRequest.from_mapping(
+            {
+                "platform": "telegram",
+                "angle": "Share how much the current multi-agent setup costs",
+                "topics": ["agents", "cost", "setup"],
+                "post_type": "tool_breakdown",
+                "retrieval_strategy": "style_memory",
+                "max_references": 5,
+            }
+        )
+
+        call_counter = {"count": 0}
+        original_builder = drafting_module.build_style_memory_index
+
+        def counting_builder(*args, **kwargs):
+            call_counter["count"] += 1
+            return original_builder(*args, **kwargs)
+
+        try:
+            drafting_module.build_style_memory_index = counting_builder
+            build_prompt_bundle(request, root=repo_root(), model="test-model")
+            first_count = call_counter["count"]
+            build_prompt_bundle(request, root=repo_root(), model="test-model")
+            second_count = call_counter["count"]
+        finally:
+            drafting_module.build_style_memory_index = original_builder
+
+        self.assertEqual(first_count, 1)
+        self.assertEqual(second_count, 1)
 
 
 class UnifiedTokenizerTest(unittest.TestCase):
