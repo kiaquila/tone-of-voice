@@ -281,7 +281,7 @@ def records_from_feedback_dirs(
     root: Path,
     feedback_dirs: Sequence[str | Path] | None = None,
 ) -> list[StyleMemoryRecord]:
-    dirs = feedback_dirs or DEFAULT_FEEDBACK_DIRS
+    dirs = DEFAULT_FEEDBACK_DIRS if feedback_dirs is None else feedback_dirs
     records: list[StyleMemoryRecord] = []
     for raw_dir in feedback_raw_dirs(root, dirs):
         for path in sorted(raw_dir.glob("*.json")):

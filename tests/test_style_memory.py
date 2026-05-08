@@ -92,6 +92,40 @@ class StyleMemoryIndexTest(unittest.TestCase):
         self.assertIn("feedback:sample:final", record_ids)
         self.assertIn("feedback:sample:corrections", record_ids)
 
+    def test_empty_feedback_dirs_disables_feedback_ingestion(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            raw_dir = root / "data" / "working" / "feedback" / "raw"
+            raw_dir.mkdir(parents=True)
+            (raw_dir / "sample.json").write_text(
+                json.dumps(
+                    {
+                        "id": "local-only",
+                        "platform": "telegram",
+                        "request": {"angle": "Ignored local feedback"},
+                        "final_text": "This should not enter deterministic eval indexes.",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            index_without_feedback = build_style_memory_index(
+                root=root,
+                reference_entries=[],
+                feedback_dirs=[],
+            )
+            index_with_default_feedback = build_style_memory_index(
+                root=root,
+                reference_entries=[],
+                feedback_dirs=None,
+            )
+
+        self.assertEqual(index_without_feedback.records, ())
+        self.assertIn(
+            "feedback:local-only:final",
+            {record.record_id for record in index_with_default_feedback.records},
+        )
+
 
 class StyleMemoryRetrievalTest(unittest.TestCase):
     def test_retrieves_matching_reference_examples(self) -> None:
