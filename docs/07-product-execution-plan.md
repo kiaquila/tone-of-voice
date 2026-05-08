@@ -194,7 +194,72 @@ Turn the local drafting flow into a phone-usable product for day-to-day work.
 - The runner ignores stale Telegram updates by default so a host restart does not reply to old queued `/draft` messages.
 - `.github/workflows/deploy.yml` and `scripts/deploy_release.sh` provide the production deploy path through AWS SSM and systemd.
 
-## Step 6 - Cross-Platform Expansion
+## Step 6 - RAG Style Memory And Experiment Harness
+
+Status: complete
+
+### Goal
+
+Turn the current bot from a prompt wrapper with heuristic reference selection into
+a measurable retrieval-augmented writing pipeline.
+
+### Deliverables
+
+- a local style-memory index built from the reference library, voice rules, and
+  captured draft/final feedback
+- a retrieval interface that can rank style memory by platform, topic, post type,
+  mood, and positive/corrective signal
+- drafting support for comparing the current heuristic reference selection with
+  RAG-style and hybrid retrieval strategies
+- an offline experiment runner that compares retrieval variants on inspectable
+  seed cases
+- experiment reports with precision/recall-style retrieval metrics and a clear
+  keep/reject decision for each variant
+- docs that explain the RAG pipeline, experiment loop, and how this maps to the
+  AI Engineer gap-skills sprint
+
+### Implementation Notes
+
+- Keep the first retriever local-first and CI-friendly. A lightweight Python
+  index is enough for the first learning loop; Chroma, LlamaIndex, LangChain,
+  Ragas, or MLflow can be added once the local contracts are stable.
+- Borrow the useful part of Margin's model: corrections and highlights become
+  scoped style signals, not vague prose feedback.
+- Treat generated examples, final edits, stop-list items, and positive style
+  samples as different memory types with explicit metadata.
+- Keep model calls out of the first experiment gate. The first A/B loop should
+  measure retrieval behavior deterministically before comparing generated text.
+- Preserve the existing human-in-the-loop bot workflow.
+
+### Done When
+
+- one command can build an inspectable style-memory index
+- one command can query the index for a draft request and show why records were
+  selected
+- CI can run the retrieval experiment suite without model credentials
+- draft artifacts record which retrieval strategy was used
+- the roadmap, delivery workflow, and README describe the new RAG/eval surface
+
+### Status Notes
+
+- `src/tone_of_voice/style_memory.py` builds and queries a local style-memory
+  index from references, voice docs, stop rules, recipes, and local feedback.
+- `scripts/build_style_memory_index.py` writes the inspectable index artifact.
+- `scripts/query_style_memory.py` queries the index directly or from a draft
+  request.
+- `src/tone_of_voice/retrieval_experiments.py` and
+  `scripts/run_retrieval_experiments.py` compare `heuristic`, `style_memory`,
+  and `hybrid` retrieval variants.
+- `evals/retrieval/style-memory-seed.json` is the first deterministic retrieval
+  experiment suite.
+- `scripts/draft_post.py` and `scripts/run_telegram_bot.py` can opt into
+  `style_memory` or `hybrid` retrieval strategies.
+- Draft artifacts record `retrieval_strategy` and `style_memory_matches`.
+- `docs/17-rag-style-memory.md` documents the pipeline, commands, and portfolio
+  framing, including the next sequence: current PR, LlamaIndex RAG,
+  generated-output A/B tests, and Ragas or judge-based evals.
+
+## Step 7 - Cross-Platform Expansion
 
 Status: planned
 
@@ -227,4 +292,5 @@ Make the product useful beyond Telegram while keeping one recognizable voice cor
 - After Step 3: learning loop starts
 - After Step 4: drafting changes become safer
 - After Step 5: usable phone product
-- After Step 6: full cross-platform product
+- After Step 6: measurable RAG-backed writing pipeline
+- After Step 7: full cross-platform product

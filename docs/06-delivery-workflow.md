@@ -21,6 +21,7 @@ Runs the minimum validation needed to keep the repository healthy:
 - Python syntax validation
 - unit tests
 - offline regression eval slice for drafting, eval, feedback, and core voice-memory changes
+- offline retrieval experiment slice for style-memory variants
 - CLI `--help` smoke checks
 
 ### guard
@@ -43,6 +44,7 @@ Already implemented:
 - trusted-comment policy workflow for AI commands
 - classic branch protection on `main` with required checks and admin enforcement
 - regression eval slice inside `baseline-checks`
+- retrieval experiment slice inside `baseline-checks`
 - Telegram bot runner, offline smoke check, final feedback capture, and `/stat` scoring
 - automated production deploy workflow for the Telegram bot via GitHub OIDC, S3 release artifacts, AWS SSM, and systemd
 
@@ -84,4 +86,5 @@ AI Review notes:
 
 - Treat this file as the canonical summary of what delivery automation is already active.
 - If a future session changes AI review, eval, or deploy automation, update this file in the same PR.
+- If a future session changes style-memory retrieval or retrieval experiment thresholds, update `docs/17-rag-style-memory.md` in the same PR.
 - If branch protection changes, update this file in the same PR and verify with `gh api`.

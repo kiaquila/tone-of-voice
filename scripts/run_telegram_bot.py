@@ -13,6 +13,7 @@ from tone_of_voice.bot import (
     run_telegram_bot,
 )
 from tone_of_voice.config import load_project_env
+from tone_of_voice.drafting import ALLOWED_RETRIEVAL_STRATEGIES
 
 
 def parse_args() -> argparse.Namespace:
@@ -63,6 +64,14 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--retrieval-strategy",
+        choices=sorted(ALLOWED_RETRIEVAL_STRATEGIES),
+        help=(
+            "Draft retrieval strategy for bot-generated prompts. Defaults to "
+            "TONE_OF_VOICE_RETRIEVAL_STRATEGY or heuristic."
+        ),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Assemble prompt artifacts without calling the model backend.",
@@ -95,6 +104,7 @@ async def main() -> None:
         session_dir=args.session_dir,
         dry_run=args.dry_run,
         model=args.model,
+        retrieval_strategy=args.retrieval_strategy,
         allowed_chat_ids=allowed_chat_ids_from_env(args.allowed_chat_id),
         allow_public=args.allow_public,
         timeout=args.timeout,

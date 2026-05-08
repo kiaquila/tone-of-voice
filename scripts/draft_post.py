@@ -7,6 +7,7 @@ import sys
 
 from tone_of_voice.config import load_project_env
 from tone_of_voice.drafting import (
+    ALLOWED_RETRIEVAL_STRATEGIES,
     DraftRequest,
     build_prompt_bundle,
     generate_with_anthropic_messages,
@@ -42,6 +43,14 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--retrieval-strategy",
+        choices=sorted(ALLOWED_RETRIEVAL_STRATEGIES),
+        help=(
+            "Reference/style-memory retrieval strategy. Defaults to request.retrieval_strategy, "
+            "TONE_OF_VOICE_RETRIEVAL_STRATEGY, or heuristic."
+        ),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Assemble and store the prompt without calling the model backend.",
@@ -66,6 +75,10 @@ def main() -> int:
     args = parse_args()
     load_project_env(args.env_file)
     request = load_request(args.request)
+    if args.retrieval_strategy:
+        request = DraftRequest.from_mapping(
+            {**request.to_dict(), "retrieval_strategy": args.retrieval_strategy}
+        )
     bundle = build_prompt_bundle(request, model=args.model)
 
     draft = None
@@ -92,6 +105,7 @@ def main() -> int:
         "References: "
         + ", ".join(reference["ref_id"] for reference in artifact["references"])
     )
+    print(f"Retrieval strategy: {artifact['retrieval_strategy']}")
 
     if draft:
         print("")

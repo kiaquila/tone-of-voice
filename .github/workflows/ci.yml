@@ -67,13 +67,19 @@ jobs:
 
           python scripts/run_regression_evals.py
 
+      - name: Run retrieval experiment slice
+        run: python scripts/run_retrieval_experiments.py
+
       - name: Smoke-check CLI help
         run: |
           python scripts/export_telegram_posts.py --help
           python scripts/build_telegram_metrics.py --help
+          python scripts/build_style_memory_index.py --help
+          python scripts/query_style_memory.py --help
           python scripts/draft_post.py --help
           python scripts/capture_feedback.py --help
           python scripts/summarize_feedback.py --help
           python scripts/run_regression_evals.py --help
+          python scripts/run_retrieval_experiments.py --help
           python scripts/run_telegram_bot.py --help
           python scripts/smoke_telegram_bot.py --help

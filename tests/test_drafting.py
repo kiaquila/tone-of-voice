@@ -42,6 +42,27 @@ class DraftRequestTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             DraftRequest.from_mapping({"platform": "newsletter", "angle": "x"})
 
+    def test_accepts_retrieval_strategy(self) -> None:
+        request = DraftRequest.from_mapping(
+            {
+                "platform": "telegram",
+                "angle": "RAG shipped",
+                "retrieval_strategy": "Style Memory",
+            }
+        )
+
+        self.assertEqual(request.retrieval_strategy, "style_memory")
+
+    def test_rejects_unknown_retrieval_strategy(self) -> None:
+        with self.assertRaises(ValueError):
+            DraftRequest.from_mapping(
+                {
+                    "platform": "telegram",
+                    "angle": "RAG shipped",
+                    "retrieval_strategy": "random",
+                }
+            )
+
 
 class ReferenceLibraryTest(unittest.TestCase):
     def test_loads_reference_entries_and_shortcuts(self) -> None:
@@ -117,6 +138,25 @@ class PromptBundleTest(unittest.TestCase):
             bundle = build_prompt_bundle(request, root=repo_root())
 
         self.assertEqual(bundle.model, "claude-sonnet-4-6")
+
+    def test_build_prompt_bundle_can_use_style_memory_strategy(self) -> None:
+        request = DraftRequest.from_mapping(
+            {
+                "platform": "telegram",
+                "angle": "Share how much the current multi-agent setup costs",
+                "topics": ["agents", "cost", "setup"],
+                "post_type": "tool_breakdown",
+                "retrieval_strategy": "style_memory",
+                "max_references": 5,
+            }
+        )
+
+        bundle = build_prompt_bundle(request, root=repo_root(), model="test-model")
+
+        self.assertEqual(bundle.retrieval_strategy, "style_memory")
+        self.assertGreaterEqual(len(bundle.style_memory_matches), 3)
+        self.assertIn("Retrieved Style Memory", bundle.prompt)
+        self.assertEqual(bundle.references[0].ref_id, "REF-TG-134")
 
 
 class ResponseExtractionTest(unittest.TestCase):
@@ -246,6 +286,8 @@ class ArtifactWritingTest(unittest.TestCase):
             data = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
             self.assertEqual(data["draft"], "draft body")
             self.assertEqual(data["response_id"], "resp_test")
+            self.assertEqual(data["retrieval_strategy"], "heuristic")
+            self.assertEqual(data["style_memory_matches"], [])
             self.assertEqual(artifact["model"], "test-model")
 
     def test_consecutive_writes_do_not_collide(self) -> None:

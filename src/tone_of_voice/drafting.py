@@ -12,9 +12,17 @@ from pathlib import Path
 from typing import Any
 
 from tone_of_voice.config import repo_root
+from tone_of_voice.style_memory import (
+    StyleMemoryMatch,
+    StyleMemoryQuery,
+    build_style_memory_index,
+    retrieve_style_memory,
+    style_memory_query_from_request,
+)
 
 
 ALLOWED_PLATFORMS = {"telegram", "threads", "linkedin"}
+ALLOWED_RETRIEVAL_STRATEGIES = {"heuristic", "style_memory", "hybrid"}
 DEFAULT_MODEL = "claude-sonnet-4-6"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 4096
 ANTHROPIC_API_VERSION = "2023-06-01"
@@ -61,6 +69,7 @@ class DraftRequest:
     language: str = "ru"
     max_references: int = 5
     model: str | None = None
+    retrieval_strategy: str | None = None
 
     @classmethod
     def from_mapping(cls, data: dict[str, Any]) -> "DraftRequest":
@@ -76,6 +85,13 @@ class DraftRequest:
 
         post_type = _optional_token(data.get("post_type"))
         recipe = _optional_token(data.get("recipe"))
+        retrieval_strategy = _optional_token(data.get("retrieval_strategy"))
+        if (
+            retrieval_strategy
+            and retrieval_strategy not in ALLOWED_RETRIEVAL_STRATEGIES
+        ):
+            allowed = ", ".join(sorted(ALLOWED_RETRIEVAL_STRATEGIES))
+            raise ValueError(f"retrieval_strategy must be one of: {allowed}")
 
         return cls(
             platform=platform,
@@ -92,6 +108,7 @@ class DraftRequest:
             language=_clean_text(data.get("language") or "ru"),
             max_references=max_references,
             model=_clean_text(data.get("model")) if data.get("model") else None,
+            retrieval_strategy=retrieval_strategy,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -150,6 +167,8 @@ class PromptBundle:
     prompt: str
     references: tuple[ReferenceEntry, ...]
     context_files: tuple[str, ...]
+    retrieval_strategy: str = "heuristic"
+    style_memory_matches: tuple[StyleMemoryMatch, ...] = ()
     system_instructions: str = SYSTEM_INSTRUCTIONS
 
 
@@ -298,6 +317,43 @@ def select_references(
     return tuple(item[2] for item in scored[: request.max_references])
 
 
+def resolve_retrieval_strategy(request: DraftRequest) -> str:
+    raw = (
+        request.retrieval_strategy
+        or os.getenv("TONE_OF_VOICE_RETRIEVAL_STRATEGY")
+        or "heuristic"
+    )
+    strategy = _normalize_token(raw)
+    if strategy not in ALLOWED_RETRIEVAL_STRATEGIES:
+        allowed = ", ".join(sorted(ALLOWED_RETRIEVAL_STRATEGIES))
+        raise ValueError(f"retrieval_strategy must be one of: {allowed}")
+    return strategy
+
+
+def select_references_from_memory(
+    request: DraftRequest,
+    library: ReferenceLibrary,
+    memory_matches: tuple[StyleMemoryMatch, ...],
+    *,
+    strategy: str,
+) -> tuple[ReferenceEntry, ...]:
+    by_id = {entry.ref_id: entry for entry in library.entries}
+    heuristic = list(select_references(request, library))
+    memory_refs = []
+    for match in memory_matches:
+        ref_id = str((match.record.metadata or {}).get("ref_id") or "").strip()
+        if ref_id and ref_id in by_id:
+            memory_refs.append(by_id[ref_id])
+
+    if strategy == "style_memory":
+        ordered = _unique_references(memory_refs + heuristic)
+    elif strategy == "hybrid":
+        ordered = _interleave_references(memory_refs, heuristic)
+    else:
+        ordered = heuristic
+    return tuple(ordered[: request.max_references])
+
+
 def build_prompt_bundle(
     request: DraftRequest,
     *,
@@ -306,7 +362,39 @@ def build_prompt_bundle(
 ) -> PromptBundle:
     base = root or repo_root()
     library = load_reference_library(base)
-    references = select_references(request, library)
+    retrieval_strategy = resolve_retrieval_strategy(request)
+    style_memory_matches: tuple[StyleMemoryMatch, ...] = ()
+    if retrieval_strategy == "heuristic":
+        references = select_references(request, library)
+    else:
+        style_index = build_style_memory_index(
+            root=base,
+            reference_entries=library.entries,
+        )
+        style_memory_matches = retrieve_style_memory(
+            style_index,
+            style_memory_query_from_request(request),
+            limit=6,
+        )
+        reference_query = style_memory_query_from_request(request)
+        reference_matches = retrieve_style_memory(
+            style_index,
+            StyleMemoryQuery(
+                text=reference_query.text,
+                platform=reference_query.platform,
+                post_type=reference_query.post_type,
+                topics=reference_query.topics,
+                mood=reference_query.mood,
+                source_types=("reference_example",),
+            ),
+            limit=request.max_references,
+        )
+        references = select_references_from_memory(
+            request,
+            library,
+            reference_matches,
+            strategy=retrieval_strategy,
+        )
     context_blocks = []
     context_files = []
 
@@ -317,6 +405,9 @@ def build_prompt_bundle(
 
     request_json = json.dumps(request.to_dict(), ensure_ascii=False, indent=2)
     reference_blocks = "\n\n".join(ref.to_prompt_block() for ref in references)
+    style_memory_blocks = "\n\n".join(
+        match.to_prompt_block() for match in style_memory_matches
+    )
 
     prompt = "\n\n".join(
         [
@@ -331,6 +422,23 @@ def build_prompt_bundle(
             "",
             "# Selected Reference Examples",
             reference_blocks or "No references selected.",
+            "",
+            "# Retrieved Style Memory",
+            (
+                "\n\n".join(
+                    [
+                        f"Retrieval strategy: {retrieval_strategy}.",
+                        (
+                            "Use positive records as style evidence. "
+                            "Use corrective records as guardrails. "
+                            "Do not mention the retrieval system."
+                        ),
+                        style_memory_blocks or "No style-memory records selected.",
+                    ]
+                )
+                if retrieval_strategy != "heuristic"
+                else "Retrieval strategy: heuristic. No extra style-memory records selected."
+            ),
             "",
             "# Output Contract",
             "- Return exactly one draft.",
@@ -353,6 +461,8 @@ def build_prompt_bundle(
         prompt=prompt,
         references=references,
         context_files=tuple(context_files),
+        retrieval_strategy=retrieval_strategy,
+        style_memory_matches=style_memory_matches,
     )
 
 
@@ -462,7 +572,11 @@ def write_draft_artifact(
         "model": bundle.model,
         "request": bundle.request.to_dict(),
         "context_files": list(bundle.context_files),
+        "retrieval_strategy": bundle.retrieval_strategy,
         "references": [reference.to_artifact() for reference in bundle.references],
+        "style_memory_matches": [
+            match.to_dict() for match in bundle.style_memory_matches
+        ],
         "prompt_path": str(prompt_path),
         "draft": draft,
         "response_id": response_data.get("id") if response_data else None,
@@ -532,6 +646,36 @@ def _shortcut_ref_ids(
     for name in shortcut_names:
         refs.update(shortcuts.get(_normalize_token(name), ()))
     return refs
+
+
+def _unique_references(entries: list[ReferenceEntry]) -> list[ReferenceEntry]:
+    seen: set[str] = set()
+    unique = []
+    for entry in entries:
+        if entry.ref_id in seen:
+            continue
+        seen.add(entry.ref_id)
+        unique.append(entry)
+    return unique
+
+
+def _interleave_references(
+    primary: list[ReferenceEntry],
+    secondary: list[ReferenceEntry],
+) -> list[ReferenceEntry]:
+    seen: set[str] = set()
+    merged: list[ReferenceEntry] = []
+    max_len = max(len(primary), len(secondary))
+    for index in range(max_len):
+        for group in (primary, secondary):
+            if index >= len(group):
+                continue
+            entry = group[index]
+            if entry.ref_id in seen:
+                continue
+            seen.add(entry.ref_id)
+            merged.append(entry)
+    return merged
 
 
 def _text_tokens(text: str) -> set[str]:

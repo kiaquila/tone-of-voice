@@ -38,10 +38,12 @@ Already completed:
 - feedback capture and edit metrics with raw/analysis storage and summary scripts
 - offline regression eval gate for drafting, feedback, eval, and core voice-memory changes
 - Telegram bot product implementation with draft, revise, approve, status, cancel, dry-run smoke checks, and operator docs
+- RAG-style memory index, query command, retrieval strategies, and offline retrieval experiment gate
 
 Next recommended steps:
 
-- continue `docs/07-product-execution-plan.md` toward Step 6 after the phone workflow has started producing real draft/final feedback
+- continue `docs/07-product-execution-plan.md` toward Step 7 cross-platform
+  expansion after validating the new retrieval strategy on real bot usage
 
 ## Product Principles
 
@@ -163,7 +165,26 @@ Status notes:
 - `/revise` can wait for the next plain message as its revision instruction.
 - `/stat` reports fit-score trend and whether recent final versions are being used as feedback memory in future drafts.
 
-### Phase 5 — Cross-Platform Expansion
+### Phase 5 — RAG Style Memory And Experiments
+
+Status: complete
+
+Goals:
+
+- turn the current reference selection into an inspectable retrieval pipeline
+- build a local style-memory index from examples, rules, and feedback pairs
+- compare heuristic, RAG-style, and hybrid retrieval variants before changing
+  generation behavior
+- make A/B-style prompt and retrieval experiments part of the normal workflow
+
+Deliverables:
+
+- style-memory index and query commands - complete
+- retrieval experiment suite and report command - complete
+- draft artifacts that record retrieval strategy - complete
+- docs for the retrieval architecture and experiment workflow - complete
+
+### Phase 6 — Cross-Platform Expansion
 
 Status: planned
 
@@ -191,7 +212,8 @@ Execution order:
 3. Step 3 - Feedback Capture And Edit Metrics - complete
 4. Step 4 - Regression Eval Gate - complete
 5. Step 5 - Telegram Bot Product - complete
-6. Step 6 - Cross-Platform Expansion - planned after the phone workflow starts producing draft/final feedback
+6. Step 6 - RAG Style Memory And Experiment Harness - complete
+7. Step 7 - Cross-Platform Expansion - planned after retrieval and experiment loops are stable
 
 ## Spec Pattern
 
