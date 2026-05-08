@@ -103,6 +103,7 @@ Useful options:
 ```bash
 python3 scripts/run_telegram_bot.py --dry-run
 python3 scripts/run_telegram_bot.py --allowed-chat-id 123456789
+python3 scripts/run_telegram_bot.py --allowed-chat-id 123456789 --retrieval-strategy hybrid
 python3 scripts/run_telegram_bot.py --drop-stale-seconds 300
 python3 scripts/run_telegram_bot.py --session-dir /opt/tone-of-voice/sessions
 python3 scripts/run_telegram_bot.py --output-dir /opt/tone-of-voice/data/bot
@@ -135,6 +136,7 @@ Optional:
 - `ANTHROPIC_MODEL`
 - `TONE_OF_VOICE_ANTHROPIC_MAX_TOKENS`
 - `ANTHROPIC_MAX_TOKENS`
+- `TONE_OF_VOICE_RETRIEVAL_STRATEGY`, one of `heuristic`, `style_memory`, or `hybrid`
 - `TONE_OF_VOICE_BOT_ALLOWED_CHAT_IDS`, comma-separated
 - `TELEGRAM_SESSION_NAME`
 - `TONE_OF_VOICE_FALLBACK_ENV`
@@ -172,6 +174,11 @@ Layout:
 - `feedback/index/source-map.json` maps draft artifact paths to feedback records for fast duplicate and replace checks.
 
 These are working artifacts and should not be committed.
+
+Draft artifacts also record the retrieval strategy and any retrieved
+style-memory records used to assemble the prompt. The default strategy is
+`heuristic`; pass `--retrieval-strategy style_memory` or
+`--retrieval-strategy hybrid` to test the RAG-style memory path.
 
 ## Learning Signal
 

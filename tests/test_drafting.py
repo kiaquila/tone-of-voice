@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
+from tone_of_voice import drafting as drafting_module
+from tone_of_voice import style_memory as style_memory_module
 from tone_of_voice.config import repo_root
 from tone_of_voice.drafting import (
     DraftRequest,
@@ -13,6 +17,7 @@ from tone_of_voice.drafting import (
     extract_anthropic_message_text,
     generate_with_anthropic_messages,
     load_reference_library,
+    normalize_token,
     select_references,
     write_draft_artifact,
 )
@@ -41,6 +46,27 @@ class DraftRequestTest(unittest.TestCase):
     def test_requires_known_platform(self) -> None:
         with self.assertRaises(ValueError):
             DraftRequest.from_mapping({"platform": "newsletter", "angle": "x"})
+
+    def test_accepts_retrieval_strategy(self) -> None:
+        request = DraftRequest.from_mapping(
+            {
+                "platform": "telegram",
+                "angle": "RAG shipped",
+                "retrieval_strategy": "Style Memory",
+            }
+        )
+
+        self.assertEqual(request.retrieval_strategy, "style_memory")
+
+    def test_rejects_unknown_retrieval_strategy(self) -> None:
+        with self.assertRaises(ValueError):
+            DraftRequest.from_mapping(
+                {
+                    "platform": "telegram",
+                    "angle": "RAG shipped",
+                    "retrieval_strategy": "random",
+                }
+            )
 
 
 class ReferenceLibraryTest(unittest.TestCase):
@@ -117,6 +143,25 @@ class PromptBundleTest(unittest.TestCase):
             bundle = build_prompt_bundle(request, root=repo_root())
 
         self.assertEqual(bundle.model, "claude-sonnet-4-6")
+
+    def test_build_prompt_bundle_can_use_style_memory_strategy(self) -> None:
+        request = DraftRequest.from_mapping(
+            {
+                "platform": "telegram",
+                "angle": "Share how much the current multi-agent setup costs",
+                "topics": ["agents", "cost", "setup"],
+                "post_type": "tool_breakdown",
+                "retrieval_strategy": "style_memory",
+                "max_references": 5,
+            }
+        )
+
+        bundle = build_prompt_bundle(request, root=repo_root(), model="test-model")
+
+        self.assertEqual(bundle.retrieval_strategy, "style_memory")
+        self.assertGreaterEqual(len(bundle.style_memory_matches), 3)
+        self.assertIn("Retrieved Style Memory", bundle.prompt)
+        self.assertEqual(bundle.references[0].ref_id, "REF-TG-134")
 
 
 class ResponseExtractionTest(unittest.TestCase):
@@ -246,6 +291,8 @@ class ArtifactWritingTest(unittest.TestCase):
             data = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
             self.assertEqual(data["draft"], "draft body")
             self.assertEqual(data["response_id"], "resp_test")
+            self.assertEqual(data["retrieval_strategy"], "heuristic")
+            self.assertEqual(data["style_memory_matches"], [])
             self.assertEqual(artifact["model"], "test-model")
 
     def test_consecutive_writes_do_not_collide(self) -> None:
@@ -283,6 +330,169 @@ class ArtifactWritingTest(unittest.TestCase):
                 json.loads(second_artifact_path.read_text(encoding="utf-8"))["draft"],
                 "second",
             )
+
+
+class PromptContextPrivacyTest(unittest.TestCase):
+    def setUp(self) -> None:
+        drafting_module._clear_style_memory_cache()
+
+    def tearDown(self) -> None:
+        drafting_module._clear_style_memory_cache()
+
+    def test_prompt_context_excludes_feedback_final(self) -> None:
+        sentinel = "SECRET-FEEDBACK-FINAL-LEAK-CHECK"
+        with tempfile.TemporaryDirectory() as td:
+            workdir = Path(td)
+            for rel_path in (
+                "docs/00-principles.md",
+                "docs/01-current-voice-snapshot.md",
+                "docs/04-platform-adaptation.md",
+                "docs/10-reference-library.md",
+                "docs/12-stop-list.md",
+                "docs/13-drafting-recipes.md",
+            ):
+                source = repo_root() / rel_path
+                target = workdir / rel_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+
+            feedback_dir = workdir / "data/working/feedback/raw"
+            feedback_dir.mkdir(parents=True, exist_ok=True)
+            (feedback_dir / "sample.json").write_text(
+                json.dumps(
+                    {
+                        "id": "sample",
+                        "platform": "telegram",
+                        "request": {
+                            "platform": "telegram",
+                            "angle": "leak check angle",
+                        },
+                        "classification": {},
+                        "final_text": sentinel,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            request = DraftRequest.from_mapping(
+                {
+                    "platform": "telegram",
+                    "angle": "Share how much the current multi-agent setup costs",
+                    "topics": ["agents", "cost", "setup"],
+                    "post_type": "tool_breakdown",
+                    "retrieval_strategy": "style_memory",
+                    "max_references": 5,
+                }
+            )
+
+            bundle = build_prompt_bundle(
+                request,
+                root=workdir,
+                model="test-model",
+            )
+
+            self.assertNotIn(sentinel, bundle.prompt)
+
+
+class StyleMemoryCacheTest(unittest.TestCase):
+    def setUp(self) -> None:
+        drafting_module._clear_style_memory_cache()
+
+    def tearDown(self) -> None:
+        drafting_module._clear_style_memory_cache()
+
+    def test_build_prompt_bundle_caches_style_memory_index(self) -> None:
+        request = DraftRequest.from_mapping(
+            {
+                "platform": "telegram",
+                "angle": "Share how much the current multi-agent setup costs",
+                "topics": ["agents", "cost", "setup"],
+                "post_type": "tool_breakdown",
+                "retrieval_strategy": "style_memory",
+                "max_references": 5,
+            }
+        )
+
+        call_counter = {"count": 0}
+        original_builder = drafting_module.build_style_memory_index
+
+        def counting_builder(*args, **kwargs):
+            call_counter["count"] += 1
+            return original_builder(*args, **kwargs)
+
+        try:
+            drafting_module.build_style_memory_index = counting_builder
+            build_prompt_bundle(request, root=repo_root(), model="test-model")
+            first_count = call_counter["count"]
+            build_prompt_bundle(request, root=repo_root(), model="test-model")
+            second_count = call_counter["count"]
+        finally:
+            drafting_module.build_style_memory_index = original_builder
+
+        self.assertEqual(first_count, 1)
+        self.assertEqual(second_count, 1)
+
+    def test_cache_invalidates_when_reference_library_content_changes(self) -> None:
+        request = DraftRequest.from_mapping(
+            {
+                "platform": "telegram",
+                "angle": "Share how much the current multi-agent setup costs",
+                "topics": ["agents", "cost", "setup"],
+                "post_type": "tool_breakdown",
+                "retrieval_strategy": "style_memory",
+                "max_references": 5,
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as td:
+            workdir = Path(td)
+            for rel_path in (
+                "docs/00-principles.md",
+                "docs/01-current-voice-snapshot.md",
+                "docs/04-platform-adaptation.md",
+                "docs/10-reference-library.md",
+                "docs/12-stop-list.md",
+                "docs/13-drafting-recipes.md",
+            ):
+                source = repo_root() / rel_path
+                target = workdir / rel_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+
+            call_counter = {"count": 0}
+            original_builder = drafting_module.build_style_memory_index
+
+            def counting_builder(*args, **kwargs):
+                call_counter["count"] += 1
+                return original_builder(*args, **kwargs)
+
+            try:
+                drafting_module.build_style_memory_index = counting_builder
+                build_prompt_bundle(request, root=workdir, model="test-model")
+                self.assertEqual(call_counter["count"], 1)
+
+                library_path = workdir / "docs/10-reference-library.md"
+                original_text = library_path.read_text(encoding="utf-8")
+                library_path.write_text(
+                    original_text + "\n<!-- updated -->\n", encoding="utf-8"
+                )
+                future = library_path.stat().st_mtime + 5
+                os.utime(library_path, (future, future))
+
+                build_prompt_bundle(request, root=workdir, model="test-model")
+                self.assertEqual(
+                    call_counter["count"],
+                    2,
+                    "cache must rebuild when reference library content changes",
+                )
+            finally:
+                drafting_module.build_style_memory_index = original_builder
+
+
+class UnifiedTokenizerTest(unittest.TestCase):
+    def test_unified_normalize_token_consistent_across_modules(self) -> None:
+        self.assertIs(drafting_module.normalize_token, style_memory_module.normalize_token)
+        self.assertEqual(normalize_token("Tone of Voice"), "tone_of_voice")
 
 
 if __name__ == "__main__":

@@ -20,6 +20,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - refresh notes based on newly published content
 - generation workflows for drafting new posts on demand
 - feedback capture from draft-to-final edits
+- retrieval experiments for RAG-style voice memory
 
 ## Initial Scope
 
@@ -54,7 +55,9 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - `docs/14-feedback-capture.md` — storage schema and workflow for draft/final feedback pairs
 - `docs/15-regression-evals.md` — offline regression eval gate for drafting changes
 - `docs/16-telegram-bot-product.md` — Telegram bot usage, operations, and recovery notes
+- `docs/17-rag-style-memory.md` — RAG-style memory index, retrieval strategies, and experiment workflow
 - `evals/regression/` — committed draft/final eval suites
+- `evals/retrieval/` — committed retrieval experiment suites
 - `examples/draft-request.telegram.json` — sample structured input for the local drafting MVP
 - `examples/feedback-capture.telegram.json` — sample manual feedback input
 - `specs/` — lightweight feature memory for software changes
@@ -65,7 +68,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
 
-The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 now has a production Telegram bot in `<your group>`; the next product step is cross-platform expansion.
+The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 has a production Telegram bot in `<your group>`, and Step 6 adds the first RAG-style memory and retrieval experiment layer before cross-platform expansion.
 
 ## Using The Telegram Bot
 
@@ -138,6 +141,25 @@ Run the regression eval slice:
 python3 scripts/run_regression_evals.py
 ```
 
+Build and query the style-memory index:
+
+```bash
+python3 scripts/build_style_memory_index.py
+python3 scripts/query_style_memory.py --request examples/draft-request.telegram.json --build
+```
+
+Run the retrieval experiment slice:
+
+```bash
+python3 scripts/run_retrieval_experiments.py
+```
+
+Assemble a draft with RAG-style retrieval:
+
+```bash
+python3 scripts/draft_post.py examples/draft-request.telegram.json --dry-run --retrieval-strategy style_memory
+```
+
 Run an offline Telegram bot smoke check:
 
 ```bash
@@ -157,4 +179,5 @@ If this repository does not have its own `.env`, set `TONE_OF_VOICE_FALLBACK_ENV
 Draft artifacts are written to `data/working/drafts/` by default and are intentionally ignored by git.
 Feedback artifacts are written to `data/working/feedback/` by default and are intentionally ignored by git.
 Structured eval reports can be written under `data/working/evals/` and are intentionally ignored by git.
+Style-memory index artifacts are written under `data/working/style-memory/` by default and are intentionally ignored by git.
 Telegram bot state, review history, and bot draft artifacts are written under `data/working/bot/` by default and are intentionally ignored by git.

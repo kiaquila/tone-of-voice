@@ -837,9 +837,14 @@ def make_draft_generator(
     draft_output_dir: str | Path,
     dry_run: bool = False,
     model: str | None = None,
+    retrieval_strategy: str | None = None,
     timeout: int = 120,
 ) -> DraftGenerator:
     def generate(request: DraftRequest) -> DraftResult:
+        if retrieval_strategy:
+            request = DraftRequest.from_mapping(
+                {**request.to_dict(), "retrieval_strategy": retrieval_strategy}
+            )
         bundle = build_prompt_bundle(request, model=model)
         draft = None
         response_data = None
@@ -876,6 +881,7 @@ async def run_telegram_bot(
     session_dir: str | None = None,
     dry_run: bool = False,
     model: str | None = None,
+    retrieval_strategy: str | None = None,
     allowed_chat_ids: set[int] | None = None,
     allow_public: bool = False,
     timeout: int = 120,
@@ -897,6 +903,7 @@ async def run_telegram_bot(
         draft_output_dir=output_root / "drafts",
         dry_run=dry_run,
         model=model,
+        retrieval_strategy=retrieval_strategy,
         timeout=timeout,
     )
 

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "name": "style-memory-retrieval-seed",
+  "description": "First deterministic retrieval experiment slice for comparing heuristic, style-memory, and hybrid reference selection before generation changes.",
+  "defaults": {
+    "k": 3,
+    "min_recall_at_k": 0.5,
+    "min_mrr": 0.25
+  },
+  "cases": [
+    {
+      "id": "telegram-agent-setup-costs",
+      "request": {
+        "platform": "telegram",
+        "angle": "Share how much the current multi-agent setup costs",
+        "topics": ["agents", "cost", "setup"],
+        "post_type": "tool_breakdown",
+        "recipe": "tool_or_setup_breakdown",
+        "max_references": 5
+      },
+      "expected_record_ids": ["REF-TG-134", "REF-TG-088"],
+      "notes": "Cost/setup requests should retrieve the explicit setup-cost reference and the workflow-authority reference."
+    },
+    {
+      "id": "linkedin-bot-product-update",
+      "request": {
+        "platform": "linkedin",
+        "angle": "Turn the Telegram bot launch into a grounded professional update about human-in-the-loop AI products",
+        "source_notes": "The bot drafts posts, supports revise/approve/final feedback, and keeps publishing manual.",
+        "topics": ["bot", "product", "ai_workflow"],
+        "post_type": "project_update",
+        "recipe": "linkedin_grounded_version",
+        "max_references": 5
+      },
+      "expected_record_ids": ["REF-TG-106", "REF-TG-129"],
+      "notes": "LinkedIn packaging should lean on project/product update references before borrowing tool-decision field notes."
+    },
+    {
+      "id": "telegram-tool-decision",
+      "request": {
+        "platform": "telegram",
+        "angle": "Explain why I dropped one AI review tool after testing it for a couple of weeks",
+        "topics": ["ai_review", "tools", "ai_workflow"],
+        "post_type": "field_note",
+        "mood": ["practical", "amused"],
+        "recipe": "telegram_field_note_from_practice",
+        "max_references": 5
+      },
+      "expected_record_ids": ["REF-TG-120", "REF-TG-102"],
+      "notes": "Tool-decision posts should retrieve the Gemini review field note and the grounded Anthropic cost take."
+    }
+  ]
+}
