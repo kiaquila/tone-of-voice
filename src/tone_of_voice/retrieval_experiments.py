@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
+
+logger = logging.getLogger(__name__)
 
 from tone_of_voice.config import repo_root
 from tone_of_voice.drafting import (
@@ -290,16 +293,42 @@ def choose_winner(aggregate: dict[str, Any]) -> str | None:
         ),
         reverse=True,
     )
+    if len(ranked) > 1:
+        top_key = (
+            ranked[0][1]["passed"],
+            ranked[0][1]["mean_recall_at_k"],
+            ranked[0][1]["mean_mrr"],
+            ranked[0][1]["mean_precision_at_k"],
+        )
+        if all(
+            (
+                item["passed"],
+                item["mean_recall_at_k"],
+                item["mean_mrr"],
+                item["mean_precision_at_k"],
+            )
+            == top_key
+            for _, item in ranked
+        ):
+            logger.warning(
+                "retrieval experiment variants tied on sort key; no clear winner"
+            )
+            return None
     return ranked[0][0]
 
 
 def format_retrieval_report(result: dict[str, Any]) -> str:
+    winner_label = (
+        result["winner"]
+        if result.get("winner")
+        else "(no clear winner - variants tied)"
+    )
     lines = [
         f"# Retrieval Experiment Report - {result['suite']}",
         "",
         f"- Total cases: {result['total_cases']}",
         f"- Variants: {', '.join(result['variants'])}",
-        f"- Winner: {result['winner'] or 'n/a'}",
+        f"- Winner: {winner_label}",
         f"- Status: {'pass' if result['passed'] else 'fail'}",
         "",
         "## Aggregate",
