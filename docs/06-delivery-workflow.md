@@ -22,6 +22,8 @@ Runs the minimum validation needed to keep the repository healthy:
 - unit tests
 - offline regression eval slice for drafting, eval, feedback, and core voice-memory changes
 - offline retrieval experiment slice for style-memory variants
+- path filters that include bot/config/eval/dependency changes when those can
+  affect drafting or retrieval behavior
 - CLI `--help` smoke checks
 
 ### guard
@@ -45,6 +47,7 @@ Already implemented:
 - classic branch protection on `main` with required checks and admin enforcement
 - regression eval slice inside `baseline-checks`
 - retrieval experiment slice inside `baseline-checks`
+- LlamaIndex-backed retrieval variant in the offline retrieval experiment slice
 - Telegram bot runner, offline smoke check, final feedback capture, and `/stat` scoring
 - automated production deploy workflow for the Telegram bot via GitHub OIDC, S3 release artifacts, AWS SSM, and systemd
 

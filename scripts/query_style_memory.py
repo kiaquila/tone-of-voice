@@ -8,6 +8,10 @@ from pathlib import Path
 
 from tone_of_voice.config import repo_root
 from tone_of_voice.drafting import DraftRequest, load_reference_library
+from tone_of_voice.llama_index_memory import (
+    DEFAULT_LLAMA_INDEX_DIR,
+    retrieve_llama_index_style_memory,
+)
 from tone_of_voice.style_memory import (
     DEFAULT_FEEDBACK_DIRS,
     DEFAULT_STYLE_INDEX_PATH,
@@ -41,6 +45,22 @@ def parse_args() -> argparse.Namespace:
         "--build",
         action="store_true",
         help="Build an in-memory index from the current repository instead of reading --index.",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=("local", "llama_index"),
+        default="local",
+        help="Retrieval backend to use for ranking matches.",
+    )
+    parser.add_argument(
+        "--llama-index-dir",
+        default=DEFAULT_LLAMA_INDEX_DIR,
+        help="Persistent LlamaIndex storage directory used with --backend llama_index.",
+    )
+    parser.add_argument(
+        "--rebuild-llama-index",
+        action="store_true",
+        help="Force rebuilding the persistent LlamaIndex storage before querying.",
     )
     parser.add_argument("--platform", help="Optional platform filter/boost.")
     parser.add_argument("--post-type", help="Optional post type filter/boost.")
@@ -125,12 +145,22 @@ def main() -> int:
     args = parse_args()
     query = build_query(args)
     index = load_or_build_index(args)
-    matches = retrieve_style_memory(index, query, limit=args.limit)
+    if args.backend == "llama_index":
+        matches = retrieve_llama_index_style_memory(
+            index,
+            query,
+            limit=args.limit,
+            persist_dir=args.llama_index_dir,
+            rebuild=args.rebuild_llama_index,
+        )
+    else:
+        matches = retrieve_style_memory(index, query, limit=args.limit)
 
     if args.json:
         print(
             json.dumps(
                 {
+                    "backend": args.backend,
                     "query": {
                         "text": query.text,
                         "platform": query.platform,
@@ -149,6 +179,7 @@ def main() -> int:
 
     print("# Style Memory Query")
     print("")
+    print(f"- Backend: {args.backend}")
     print(f"- Matches: {len(matches)}")
     print("")
     for match in matches:

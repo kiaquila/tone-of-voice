@@ -22,7 +22,7 @@ class RetrievalExperimentSuiteTest(unittest.TestCase):
         self.assertEqual(result["total_cases"], 4)
         self.assertIn(
             result["winner"],
-            {"heuristic", "style_memory", "hybrid", None},
+            {"heuristic", "style_memory", "hybrid", "llama_index", None},
         )
         self.assertIn("style-memory-retrieval-seed", report)
 

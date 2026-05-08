@@ -177,8 +177,9 @@ These are working artifacts and should not be committed.
 
 Draft artifacts also record the retrieval strategy and any retrieved
 style-memory records used to assemble the prompt. The default strategy is
-`heuristic`; pass `--retrieval-strategy style_memory` or
-`--retrieval-strategy hybrid` to test the RAG-style memory path.
+`heuristic`; pass `--retrieval-strategy style_memory`,
+`--retrieval-strategy hybrid`, or `--retrieval-strategy llama_index` to test the
+RAG-style memory paths.
 
 ## Learning Signal
 
