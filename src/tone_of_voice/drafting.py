@@ -16,8 +16,10 @@ from tone_of_voice.style_memory import (
     StyleMemoryMatch,
     StyleMemoryQuery,
     build_style_memory_index,
+    normalize_token,
     retrieve_style_memory,
     style_memory_query_from_request,
+    text_tokens,
 )
 
 
@@ -73,7 +75,7 @@ class DraftRequest:
 
     @classmethod
     def from_mapping(cls, data: dict[str, Any]) -> "DraftRequest":
-        platform = _normalize_token(_required_text(data, "platform"))
+        platform = normalize_token(_required_text(data, "platform"))
         if platform not in ALLOWED_PLATFORMS:
             allowed = ", ".join(sorted(ALLOWED_PLATFORMS))
             raise ValueError(f"platform must be one of: {allowed}")
@@ -201,12 +203,12 @@ def parse_reference_library(markdown: str) -> ReferenceLibrary:
             ReferenceEntry(
                 ref_id=current["ref_id"],
                 title=current["title"],
-                platform=_normalize_token(fields.get("platform", "")),
+                platform=normalize_token(fields.get("platform", "")),
                 source=fields.get("source", ""),
                 published_at=fields.get("published_at", ""),
                 post_types=tuple(_split_tokens(fields.get("post_type", ""))),
                 moods=tuple(_split_tokens(fields.get("mood", ""))),
-                depth=_normalize_token(fields.get("depth", "")),
+                depth=normalize_token(fields.get("depth", "")),
                 topics=tuple(_split_tokens(fields.get("topics", ""))),
                 best_for=fields.get("best_for", ""),
                 watch_out=fields.get("watch_out", ""),
@@ -227,7 +229,7 @@ def parse_reference_library(markdown: str) -> ReferenceLibrary:
             shortcut_match = re.match(r"^- `([^`]+)`: (.+)$", line)
             if shortcut_match:
                 refs = tuple(re.findall(r"REF-[A-Z]+-\d+", shortcut_match.group(2)))
-                shortcuts[_normalize_token(shortcut_match.group(1))] = refs
+                shortcuts[normalize_token(shortcut_match.group(1))] = refs
             continue
 
         heading = re.match(r"^### (REF-[A-Z]+-\d+) - (.+)$", line)
@@ -257,7 +259,7 @@ def parse_reference_library(markdown: str) -> ReferenceLibrary:
 
         field = re.match(r"^- `([^`]+)`: (.*)$", line)
         if field:
-            current["fields"][_normalize_token(field.group(1))] = field.group(2).strip()
+            current["fields"][normalize_token(field.group(1))] = field.group(2).strip()
 
     finalize_current()
     return ReferenceLibrary(entries=tuple(entries), shortcuts=shortcuts)
@@ -271,17 +273,19 @@ def select_references(
         return ()
 
     shortcut_ref_ids = _shortcut_ref_ids(request, library.shortcuts)
-    query_tokens = _text_tokens(
-        " ".join(
-            [
-                request.angle,
-                request.source_notes,
-                " ".join(request.constraints),
-                request.call_to_action or "",
-                " ".join(request.topics),
-                request.post_type or "",
-                " ".join(request.mood),
-            ]
+    query_tokens = set(
+        text_tokens(
+            " ".join(
+                [
+                    request.angle,
+                    request.source_notes,
+                    " ".join(request.constraints),
+                    request.call_to_action or "",
+                    " ".join(request.topics),
+                    request.post_type or "",
+                    " ".join(request.mood),
+                ]
+            )
         )
     )
 
@@ -299,15 +303,17 @@ def select_references(
         score += 5 * len(set(request.topics).intersection(entry.topics))
         score += 3 * len(set(request.mood).intersection(entry.moods))
 
-        entry_tokens = _text_tokens(
-            " ".join(
-                [
-                    entry.title,
-                    entry.best_for,
-                    entry.watch_out,
-                    " ".join(entry.post_types),
-                    " ".join(entry.topics),
-                ]
+        entry_tokens = set(
+            text_tokens(
+                " ".join(
+                    [
+                        entry.title,
+                        entry.best_for,
+                        entry.watch_out,
+                        " ".join(entry.post_types),
+                        " ".join(entry.topics),
+                    ]
+                )
             )
         )
         score += min(len(query_tokens.intersection(entry_tokens)), 5)
@@ -323,7 +329,7 @@ def resolve_retrieval_strategy(request: DraftRequest) -> str:
         or os.getenv("TONE_OF_VOICE_RETRIEVAL_STRATEGY")
         or "heuristic"
     )
-    strategy = _normalize_token(raw)
+    strategy = normalize_token(raw)
     if strategy not in ALLOWED_RETRIEVAL_STRATEGIES:
         allowed = ", ".join(sorted(ALLOWED_RETRIEVAL_STRATEGIES))
         raise ValueError(f"retrieval_strategy must be one of: {allowed}")
@@ -601,15 +607,11 @@ def _clean_text(value: Any) -> str:
 
 def _optional_token(value: Any) -> str | None:
     text = _clean_text(value)
-    return _normalize_token(text) if text else None
-
-
-def _normalize_token(value: str) -> str:
-    return re.sub(r"_+", "_", re.sub(r"[\s\-]+", "_", value.strip().lower())).strip("_")
+    return normalize_token(text) if text else None
 
 
 def _split_tokens(value: str) -> list[str]:
-    return [_normalize_token(part) for part in value.split(",") if part.strip()]
+    return [normalize_token(part) for part in value.split(",") if part.strip()]
 
 
 def _listify(value: Any, *, normalize_tokens: bool = False) -> list[str]:
@@ -623,7 +625,7 @@ def _listify(value: Any, *, normalize_tokens: bool = False) -> list[str]:
         values = [_clean_text(value)]
     values = [item for item in values if item]
     if normalize_tokens:
-        return [_normalize_token(item) for item in values]
+        return [normalize_token(item) for item in values]
     return values
 
 
@@ -644,7 +646,7 @@ def _shortcut_ref_ids(
 
     refs: set[str] = set()
     for name in shortcut_names:
-        refs.update(shortcuts.get(_normalize_token(name), ()))
+        refs.update(shortcuts.get(normalize_token(name), ()))
     return refs
 
 
@@ -676,10 +678,6 @@ def _interleave_references(
             seen.add(entry.ref_id)
             merged.append(entry)
     return merged
-
-
-def _text_tokens(text: str) -> set[str]:
-    return set(re.findall(r"[a-zа-яё0-9_]{3,}", text.lower()))
 
 
 def _artifact_id(request: DraftRequest, created_at: datetime) -> str:

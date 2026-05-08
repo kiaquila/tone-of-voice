@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 from collections import Counter
 from dataclasses import asdict, dataclass
@@ -9,6 +10,8 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 from tone_of_voice.config import repo_root
+
+logger = logging.getLogger(__name__)
 
 
 SCHEMA_VERSION = 1
@@ -381,6 +384,11 @@ def dedupe_records(records: Iterable[StyleMemoryRecord]) -> list[StyleMemoryReco
     deduped = []
     for record in records:
         if record.record_id in seen:
+            logger.debug(
+                "style memory dedupe skipped duplicate record_id=%s source=%s",
+                record.record_id,
+                record.source,
+            )
             continue
         seen.add(record.record_id)
         deduped.append(record)
@@ -563,10 +571,12 @@ def platform_from_text(text: str) -> str | None:
 
 
 def _token_counts(text: str) -> Counter[str]:
-    return Counter(_text_tokens(text))
+    return Counter(text_tokens(text))
 
 
-def _text_tokens(text: str) -> list[str]:
+def text_tokens(text: str) -> list[str]:
+    """Canonical tokenizer used by both retrieval and drafting code paths."""
+
     tokens: list[str] = []
     current: list[str] = []
     for char in text.casefold().replace("-", "_"):
@@ -582,6 +592,10 @@ def _text_tokens(text: str) -> list[str]:
         if len(token) >= 3:
             tokens.append(token)
     return tokens
+
+
+# Internal alias retained for backwards compatibility within this module.
+_text_tokens = text_tokens
 
 
 def _required_text(data: dict[str, Any], key: str) -> str:
@@ -601,12 +615,18 @@ def _optional_token(value: Any) -> str | None:
     return _normalize_token(text) if text else None
 
 
-def _normalize_token(value: str) -> str:
+def normalize_token(value: str) -> str:
+    """Canonical token normalization shared with the drafting module."""
+
     return "_".join(part for part in value.strip().casefold().replace("-", " ").split())
 
 
+# Internal alias retained for backwards compatibility within this module.
+_normalize_token = normalize_token
+
+
 def _normalize_token_list(value: Any) -> list[str]:
-    return [_normalize_token(item) for item in _string_list(value)]
+    return [normalize_token(item) for item in _string_list(value)]
 
 
 def _string_list(value: Any) -> list[str]:

@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tone_of_voice import drafting as drafting_module
+from tone_of_voice import style_memory as style_memory_module
 from tone_of_voice.config import repo_root
 from tone_of_voice.drafting import (
     DraftRequest,
@@ -13,6 +15,7 @@ from tone_of_voice.drafting import (
     extract_anthropic_message_text,
     generate_with_anthropic_messages,
     load_reference_library,
+    normalize_token,
     select_references,
     write_draft_artifact,
 )
@@ -325,6 +328,12 @@ class ArtifactWritingTest(unittest.TestCase):
                 json.loads(second_artifact_path.read_text(encoding="utf-8"))["draft"],
                 "second",
             )
+
+
+class UnifiedTokenizerTest(unittest.TestCase):
+    def test_unified_normalize_token_consistent_across_modules(self) -> None:
+        self.assertIs(drafting_module.normalize_token, style_memory_module.normalize_token)
+        self.assertEqual(normalize_token("Tone of Voice"), "tone_of_voice")
 
 
 if __name__ == "__main__":
