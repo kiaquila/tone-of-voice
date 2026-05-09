@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -12,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from tone_of_voice.config import repo_root
+from tone_of_voice.llama_index_memory import retrieve_llama_index_style_memory
 from tone_of_voice.style_memory import (
     DEFAULT_FEEDBACK_DIRS,
     STYLE_MEMORY_DOCS,
@@ -27,7 +29,7 @@ from tone_of_voice.style_memory import (
 
 
 ALLOWED_PLATFORMS = {"telegram", "threads", "linkedin"}
-ALLOWED_RETRIEVAL_STRATEGIES = {"heuristic", "style_memory", "hybrid"}
+ALLOWED_RETRIEVAL_STRATEGIES = {"heuristic", "style_memory", "hybrid", "llama_index"}
 # Source types eligible for the drafting prompt context. `feedback_final`
 # (raw user final post text) is intentionally excluded so that previous final
 # posts do not leak back into the prompt and cause self-imitation drift or
@@ -367,7 +369,7 @@ def select_references_from_memory(
         if ref_id and ref_id in by_id:
             memory_refs.append(by_id[ref_id])
 
-    if strategy == "style_memory":
+    if strategy in {"style_memory", "llama_index"}:
         ordered = _unique_references(memory_refs + heuristic)
     elif strategy == "hybrid":
         ordered = _interleave_references(memory_refs, heuristic)
@@ -397,40 +399,34 @@ def _style_memory_cache_fingerprint(
     base: Path,
     library: ReferenceLibrary,
 ) -> tuple[Any, ...]:
-    doc_mtimes: list[float] = []
+    doc_hashes: list[tuple[str, str]] = []
     for rel_path, *_rest in STYLE_MEMORY_DOCS:
         doc_path = base / rel_path
-        try:
-            doc_mtimes.append(doc_path.stat().st_mtime)
-        except OSError:
-            doc_mtimes.append(0.0)
+        doc_hashes.append((rel_path, _file_content_hash(doc_path)))
 
-    feedback_mtimes: list[float] = []
-    feedback_paths: list[str] = []
+    feedback_hashes: list[tuple[str, str]] = []
     for raw_dir in feedback_raw_dirs(base, DEFAULT_FEEDBACK_DIRS):
         for path in sorted(raw_dir.glob("*.json")):
-            feedback_paths.append(str(path))
-            try:
-                feedback_mtimes.append(path.stat().st_mtime)
-            except OSError:
-                feedback_mtimes.append(0.0)
+            feedback_hashes.append((str(path), _file_content_hash(path)))
 
     library_signature = tuple(entry.ref_id for entry in library.entries)
     library_path = base / "docs/10-reference-library.md"
-    try:
-        library_mtime = library_path.stat().st_mtime
-    except OSError:
-        library_mtime = 0.0
+    library_hash = _file_content_hash(library_path)
 
     return (
         str(base),
-        tuple(rel_path for rel_path, *_ in STYLE_MEMORY_DOCS),
-        tuple(doc_mtimes),
-        tuple(feedback_paths),
-        tuple(feedback_mtimes),
+        tuple(doc_hashes),
+        tuple(feedback_hashes),
         library_signature,
-        library_mtime,
+        library_hash,
     )
+
+
+def _file_content_hash(path: Path) -> str:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return "missing"
 
 
 def _get_or_build_style_memory_index(
@@ -471,7 +467,8 @@ def build_prompt_bundle(
     else:
         style_index = _get_or_build_style_memory_index(base, library)
         prompt_context_query = style_memory_query_from_request(request)
-        style_memory_matches = retrieve_style_memory(
+        style_memory_matches = retrieve_matches_for_strategy(
+            retrieval_strategy,
             style_index,
             StyleMemoryQuery(
                 text=prompt_context_query.text,
@@ -482,9 +479,11 @@ def build_prompt_bundle(
                 source_types=PROMPT_CONTEXT_SOURCE_TYPES,
             ),
             limit=6,
+            root=base,
         )
         reference_query = style_memory_query_from_request(request)
-        reference_matches = retrieve_style_memory(
+        reference_matches = retrieve_matches_for_strategy(
+            retrieval_strategy,
             style_index,
             StyleMemoryQuery(
                 text=reference_query.text,
@@ -495,6 +494,7 @@ def build_prompt_bundle(
                 source_types=("reference_example",),
             ),
             limit=request.max_references,
+            root=base,
         )
         references = select_references_from_memory(
             request,
@@ -571,6 +571,24 @@ def build_prompt_bundle(
         retrieval_strategy=retrieval_strategy,
         style_memory_matches=style_memory_matches,
     )
+
+
+def retrieve_matches_for_strategy(
+    strategy: str,
+    style_index: Any,
+    query: StyleMemoryQuery,
+    *,
+    limit: int,
+    root: Path,
+) -> tuple[StyleMemoryMatch, ...]:
+    if strategy == "llama_index":
+        return retrieve_llama_index_style_memory(
+            style_index,
+            query,
+            limit=limit,
+            root=root,
+        )
+    return retrieve_style_memory(style_index, query, limit=limit)
 
 
 def generate_with_anthropic_messages(

@@ -6,6 +6,10 @@ from collections import Counter
 
 from tone_of_voice.config import repo_root
 from tone_of_voice.drafting import load_reference_library
+from tone_of_voice.llama_index_memory import (
+    DEFAULT_LLAMA_INDEX_DIR,
+    build_or_load_llama_index,
+)
 from tone_of_voice.style_memory import (
     DEFAULT_FEEDBACK_DIRS,
     DEFAULT_STYLE_INDEX_PATH,
@@ -32,6 +36,16 @@ def parse_args() -> argparse.Namespace:
             "Defaults to data/working/feedback and data/working/bot/feedback."
         ),
     )
+    parser.add_argument(
+        "--llama-index",
+        action="store_true",
+        help="Also build the persistent LlamaIndex vector index.",
+    )
+    parser.add_argument(
+        "--llama-index-dir",
+        default=DEFAULT_LLAMA_INDEX_DIR,
+        help="Persistent LlamaIndex storage directory.",
+    )
     return parser.parse_args()
 
 
@@ -53,6 +67,14 @@ def main() -> int:
         "Source types: "
         + ", ".join(f"{name}={count}" for name, count in sorted(source_counts.items()))
     )
+    if args.llama_index:
+        llama_index = build_or_load_llama_index(
+            index,
+            persist_dir=args.llama_index_dir,
+            root=root,
+            rebuild=True,
+        )
+        print(f"LlamaIndex storage: {llama_index.persist_dir}")
     return 0
 
 

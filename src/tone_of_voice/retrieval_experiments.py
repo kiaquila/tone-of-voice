@@ -16,6 +16,7 @@ from tone_of_voice.drafting import (
     load_reference_library,
     select_references,
 )
+from tone_of_voice.llama_index_memory import retrieve_llama_index_style_memory
 from tone_of_voice.style_memory import (
     StyleMemoryIndex,
     build_style_memory_index,
@@ -26,7 +27,7 @@ from tone_of_voice.style_memory import (
 
 SCHEMA_VERSION = 1
 DEFAULT_RETRIEVAL_SUITE = "evals/retrieval/style-memory-seed.json"
-DEFAULT_VARIANTS = ("heuristic", "style_memory", "hybrid")
+DEFAULT_VARIANTS = ("heuristic", "style_memory", "hybrid", "llama_index")
 
 
 @dataclass(frozen=True)
@@ -223,6 +224,18 @@ def select_variant_records(
             k=k,
         )
         return interleave_unique(style_ids, heuristic_ids, limit=k)
+    if normalized == "llama_index":
+        query = style_memory_query_from_request(request)
+        query = type(query)(
+            text=query.text,
+            platform=query.platform,
+            post_type=query.post_type,
+            topics=query.topics,
+            mood=query.mood,
+            source_types=("reference_example",),
+        )
+        matches = retrieve_llama_index_style_memory(index, query, limit=k)
+        return tuple(match.record.record_id for match in matches)
     raise ValueError(f"unknown retrieval variant: {variant}")
 
 

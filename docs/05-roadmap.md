@@ -39,11 +39,14 @@ Already completed:
 - offline regression eval gate for drafting, feedback, eval, and core voice-memory changes
 - Telegram bot product implementation with draft, revise, approve, status, cancel, dry-run smoke checks, and operator docs
 - RAG-style memory index, query command, retrieval strategies, and offline retrieval experiment gate
+- opt-in LlamaIndex-backed retrieval strategy with persistent local index storage
 
 Next recommended steps:
 
-- continue `docs/07-product-execution-plan.md` toward Step 7 cross-platform
-  expansion after validating the new retrieval strategy on real bot usage
+- continue the Step 6 follow-up sequence in `docs/17-rag-style-memory.md`:
+  generated-output A/B tests, then a Ragas or lightweight judge eval layer
+- start Step 7 cross-platform expansion only after the retrieval and generated
+  output eval loops are stable enough to protect voice quality across platforms
 
 ## Product Principles
 
@@ -173,8 +176,8 @@ Goals:
 
 - turn the current reference selection into an inspectable retrieval pipeline
 - build a local style-memory index from examples, rules, and feedback pairs
-- compare heuristic, RAG-style, and hybrid retrieval variants before changing
-  generation behavior
+- compare heuristic, RAG-style, hybrid, and LlamaIndex retrieval variants
+  before changing generation behavior
 - make A/B-style prompt and retrieval experiments part of the normal workflow
 
 Deliverables:
@@ -183,6 +186,7 @@ Deliverables:
 - retrieval experiment suite and report command - complete
 - draft artifacts that record retrieval strategy - complete
 - docs for the retrieval architecture and experiment workflow - complete
+- opt-in LlamaIndex-backed retrieval path with persistent storage - complete
 
 ### Phase 6 — Cross-Platform Expansion
 
@@ -213,7 +217,8 @@ Execution order:
 4. Step 4 - Regression Eval Gate - complete
 5. Step 5 - Telegram Bot Product - complete
 6. Step 6 - RAG Style Memory And Experiment Harness - complete
-7. Step 7 - Cross-Platform Expansion - planned after retrieval and experiment loops are stable
+7. Step 6 follow-ups - generated-output A/B tests and judge evals before cross-platform expansion
+8. Step 7 - Cross-Platform Expansion - planned after retrieval and generated-output eval loops are stable
 
 ## Spec Pattern
 

@@ -253,11 +253,14 @@ a measurable retrieval-augmented writing pipeline.
 - `evals/retrieval/style-memory-seed.json` is the first deterministic retrieval
   experiment suite.
 - `scripts/draft_post.py` and `scripts/run_telegram_bot.py` can opt into
-  `style_memory` or `hybrid` retrieval strategies.
+  `style_memory`, `hybrid`, or `llama_index` retrieval strategies.
 - Draft artifacts record `retrieval_strategy` and `style_memory_matches`.
 - `docs/17-rag-style-memory.md` documents the pipeline, commands, and portfolio
-  framing, including the next sequence: current PR, LlamaIndex RAG,
-  generated-output A/B tests, and Ragas or judge-based evals.
+  framing, including the next sequence: generated-output A/B tests, Ragas or
+  judge-based evals, and only then cross-platform expansion.
+- The first LlamaIndex-backed path builds `Document` records from style memory,
+  persists a local `VectorStoreIndex`, and evaluates the `llama_index` variant
+  beside `heuristic`, `style_memory`, and `hybrid`.
 
 ## Step 7 - Cross-Platform Expansion
 

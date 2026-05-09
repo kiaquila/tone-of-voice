@@ -7,6 +7,9 @@
     "min_recall_at_k": 0.5,
     "min_mrr": 0.25
   },
+  "rationale": {
+    "k": "Use k=3 because drafting requires 3 to 5 references and the lower bound keeps the retrieval eval strict: a relevant style signal must appear in the compact context window, not only after extra padding."
+  },
   "cases": [
     {
       "id": "telegram-agent-setup-costs",
@@ -48,6 +51,20 @@
       },
       "expected_record_ids": ["REF-TG-120", "REF-TG-102"],
       "notes": "Tool-decision posts should retrieve the Gemini review field note and the grounded Anthropic cost take."
+    },
+    {
+      "id": "telegram-contrarian-managed-agents-cost",
+      "request": {
+        "platform": "telegram",
+        "angle": "React to Claude Managed Agents and explain why I did not find a use for it after my API cost experiment",
+        "topics": ["tools", "claude", "agents", "cost", "infrastructure"],
+        "post_type": "opinion",
+        "mood": ["contrarian", "practical", "amused"],
+        "recipe": "contrarian_product_take",
+        "max_references": 5
+      },
+      "expected_record_ids": ["REF-TG-102", "REF-TG-120"],
+      "notes": "This case separates pure style-memory retrieval from hybrid retrieval: style-memory leans toward cost/setup similarity, while hybrid should preserve the recipe-level tool-decision reference."
     }
   ]
 }

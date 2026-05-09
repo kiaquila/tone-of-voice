@@ -68,7 +68,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
 
-The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 has a production Telegram bot in `<your group>`, and Step 6 adds the first RAG-style memory and retrieval experiment layer before cross-platform expansion.
+The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 has a production Telegram bot in `<your group>`, and Step 6 now has local and LlamaIndex-backed RAG-style memory paths. The next sequence is generated-output A/B tests and judge-style evals before cross-platform expansion.
 
 ## Using The Telegram Bot
 
@@ -148,6 +148,13 @@ python3 scripts/build_style_memory_index.py
 python3 scripts/query_style_memory.py --request examples/draft-request.telegram.json --build
 ```
 
+Build and query the LlamaIndex-backed retrieval path:
+
+```bash
+python3 scripts/build_style_memory_index.py --llama-index
+python3 scripts/query_style_memory.py "multi-agent setup costs" --build --backend llama_index --source-type reference_example
+```
+
 Run the retrieval experiment slice:
 
 ```bash
@@ -158,6 +165,7 @@ Assemble a draft with RAG-style retrieval:
 
 ```bash
 python3 scripts/draft_post.py examples/draft-request.telegram.json --dry-run --retrieval-strategy style_memory
+python3 scripts/draft_post.py examples/draft-request.telegram.json --dry-run --retrieval-strategy llama_index
 ```
 
 Run an offline Telegram bot smoke check:

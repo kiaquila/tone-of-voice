@@ -91,6 +91,13 @@ Build the local index:
 python3 scripts/build_style_memory_index.py
 ```
 
+Build both the JSON style-memory artifact and the persistent LlamaIndex vector
+index:
+
+```bash
+python3 scripts/build_style_memory_index.py --llama-index
+```
+
 Query the index directly:
 
 ```bash
@@ -101,6 +108,12 @@ Query from a draft request:
 
 ```bash
 python3 scripts/query_style_memory.py --request examples/draft-request.telegram.json --build
+```
+
+Query through the persistent LlamaIndex path:
+
+```bash
+python3 scripts/query_style_memory.py "multi-agent setup costs" --build --backend llama_index --source-type reference_example
 ```
 
 Run retrieval experiments:
@@ -119,6 +132,12 @@ Use RAG-style retrieval while drafting:
 
 ```bash
 python3 scripts/draft_post.py examples/draft-request.telegram.json --dry-run --retrieval-strategy style_memory
+```
+
+Use the LlamaIndex-backed retrieval strategy:
+
+```bash
+python3 scripts/draft_post.py examples/draft-request.telegram.json --dry-run --retrieval-strategy llama_index
 ```
 
 Run the Telegram bot with the same retrieval strategy:
@@ -142,6 +161,10 @@ export TONE_OF_VOICE_RETRIEVAL_STRATEGY=hybrid
   corrective signals.
 - `hybrid`: interleaves style-memory retrieval with heuristic references for
   coverage.
+- `llama_index`: builds LlamaIndex `Document` objects from the style-memory
+  records, stores a persistent `VectorStoreIndex`, retrieves with a local
+  deterministic embedding, and applies metadata filters such as source type
+  before ranking.
 
 The default remains `heuristic` so production behavior does not change unless a
 request, CLI flag, or environment variable opts into the new path.
@@ -160,6 +183,11 @@ runner reports:
 - mean reciprocal rank
 - failed cases per variant
 - the current winner
+
+The seed suite currently uses `k=3`. That is intentional: drafting asks for
+3 to 5 reference examples, and the lower bound keeps the retrieval eval strict.
+A relevant style signal should fit into the compact prompt context instead of
+only appearing after extra padding.
 
 This is deliberately an offline retrieval A/B harness. It does not call a model.
 Once the retrieval variants are stable, generated-text A/B tests can add model
@@ -181,35 +209,29 @@ This step is useful for the Plata AI Engineer gap-skills sprint because it
 creates a concrete AI/ML pipeline:
 
 - ingestion: voice docs, curated references, draft/final feedback
-- retrieval: local TF-IDF-style ranked memory with metadata boosts
+- retrieval: local TF-IDF-style ranked memory plus an opt-in LlamaIndex
+  `VectorStoreIndex` path with persistent storage and metadata filters
 - generation: Anthropic prompt assembly with recorded retrieval strategy
 - evaluation: deterministic retrieval experiments in CI
 - feedback: final edits become future memory records
 
-The first implementation is local and dependency-light. Future PRs can swap the
-retriever for Chroma, LlamaIndex, LangChain, Ragas, or MLflow once the contracts
-are stable.
+The first implementation is still local-first and CI-friendly. Future PRs can
+swap the deterministic embedding for a stronger local or provider embedding,
+then add Ragas or MLflow once generated-output contracts are stable.
 
 ## Next Implementation Sequence
 
-1. Close the current Step 6 PR.
-   - Commit and open the current RAG-style memory prototype as a pull request.
-   - This PR should establish the local retrieval layer, experiment harness, CI
-     gate, and docs as the baseline.
-
-2. Replace the prototype retriever with a real LlamaIndex-backed RAG path.
-   - Add document/node construction, embeddings, persistent index storage, and
-     metadata filters.
-   - Keep `heuristic`, `style_memory`, and `hybrid` available while the new
-     `llama_index` strategy is evaluated.
-
-3. Add generated-output A/B tests.
+1. Add generated-output A/B tests.
    - Compare drafts generated with different retrieval strategies, not only
      which references were selected.
    - Record edit distance, selected/final variant, manual preference, and common
      correction tags.
 
-4. Add Ragas or a lightweight judge-based eval layer.
+2. Add Ragas or a lightweight judge-based eval layer.
    - Use it after real generated drafts and final edits exist.
    - Evaluate generated output quality, context relevance, and whether retrieved
      memory was actually useful.
+
+3. Then continue Step 7 cross-platform expansion.
+   - Expand LinkedIn and Threads on top of the retrieval and eval surface rather
+     than stretching the Telegram bot before the RAG loop is measurable.
