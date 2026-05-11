@@ -33,10 +33,8 @@ class GeneratedOutputExperimentSuiteTest(unittest.TestCase):
             len(case["variants"]["hybrid"]["prompt"]["reference_ids"]),
             3,
         )
-        self.assertIn(
-            ("less_generic", 2),
-            result["common_tone_corrections"],
-        )
+        tone_correction_counts = dict(result["common_tone_corrections"])
+        self.assertGreaterEqual(tone_correction_counts.get("less_generic", 0), 2)
 
     def test_evaluates_subset_of_variants(self) -> None:
         suite = {

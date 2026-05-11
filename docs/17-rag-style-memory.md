@@ -220,6 +220,13 @@ Use the existing drafting command to generate real candidate drafts, then copy
 the inspected outputs into a generated-output suite when they are safe to commit
 or into an ignored local suite under `data/working/evals/` for private review.
 
+The default suite is intentionally a shape-only baseline: it has a single case
+with `max_char_percent_changed` and `max_word_percent_changed` set to `100.0`,
+so only the `min_prompt_references=3` gate fires in CI. Real drift detection
+arrives once manual A/B drafts populate additional cases. The winner is chosen
+by objective edit metrics first (`best_by_edit_count`, then median word/char
+change); the human `selected_count` is only a tie-breaker.
+
 ## CI Behavior
 
 `baseline-checks` now runs:

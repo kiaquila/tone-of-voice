@@ -376,14 +376,7 @@ def choose_generated_output_winner(aggregate: dict[str, Any]) -> str | None:
         return None
     ranked = sorted(
         aggregate.items(),
-        key=lambda item: (
-            item[1]["passed"],
-            item[1]["selected_count"],
-            item[1]["best_by_edit_count"],
-            -item[1]["median_word_percent_changed"],
-            -item[1]["median_char_percent_changed"],
-        ),
-        reverse=True,
+        key=lambda item: (*_winner_key(item[1]), item[0]),
     )
     if len(ranked) > 1:
         top_key = _winner_key(ranked[0][1])
@@ -469,12 +462,14 @@ def format_generated_output_report(result: dict[str, Any]) -> str:
 
 
 def _winner_key(metrics: dict[str, Any]) -> tuple[Any, ...]:
+    # Objective edit-metrics drive ranking; the human `selected_count` acts only
+    # as a tie-breaker so the winner cannot just re-broadcast manual labels.
     return (
-        metrics["passed"],
-        metrics["selected_count"],
-        metrics["best_by_edit_count"],
-        -metrics["median_word_percent_changed"],
-        -metrics["median_char_percent_changed"],
+        not metrics["passed"],
+        -metrics["best_by_edit_count"],
+        metrics["median_word_percent_changed"],
+        metrics["median_char_percent_changed"],
+        -metrics["selected_count"],
     )
 
 

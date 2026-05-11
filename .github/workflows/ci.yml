@@ -52,7 +52,7 @@ jobs:
             changed="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
             while IFS= read -r f; do
               case "$f" in
-                pyproject.toml|requirements.txt|requirements-dev.txt|src/tone_of_voice/bot.py|src/tone_of_voice/config.py|src/tone_of_voice/drafting.py|src/tone_of_voice/feedback.py|src/tone_of_voice/evals.py|src/tone_of_voice/llama_index_memory.py|scripts/draft_post.py|scripts/capture_feedback.py|scripts/run_regression_evals.py|evals/regression/*|docs/00-principles.md|docs/01-current-voice-snapshot.md|docs/04-platform-adaptation.md|docs/10-reference-library.md|docs/12-stop-list.md|docs/13-drafting-recipes.md)
+                pyproject.toml|requirements.txt|requirements-dev.txt|src/tone_of_voice/bot.py|src/tone_of_voice/config.py|src/tone_of_voice/drafting.py|src/tone_of_voice/feedback.py|src/tone_of_voice/metrics.py|src/tone_of_voice/evals.py|src/tone_of_voice/llama_index_memory.py|scripts/draft_post.py|scripts/capture_feedback.py|scripts/run_regression_evals.py|evals/regression/*|docs/00-principles.md|docs/01-current-voice-snapshot.md|docs/04-platform-adaptation.md|docs/10-reference-library.md|docs/12-stop-list.md|docs/13-drafting-recipes.md)
                   should_run=true
                   break
                   ;;
@@ -114,7 +114,7 @@ jobs:
             changed="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
             while IFS= read -r f; do
               case "$f" in
-                pyproject.toml|requirements.txt|requirements-dev.txt|src/tone_of_voice/bot.py|src/tone_of_voice/config.py|src/tone_of_voice/drafting.py|src/tone_of_voice/feedback.py|src/tone_of_voice/evals.py|src/tone_of_voice/style_memory.py|src/tone_of_voice/retrieval_experiments.py|src/tone_of_voice/generated_output_experiments.py|src/tone_of_voice/llama_index_memory.py|scripts/draft_post.py|scripts/run_generated_output_experiments.py|evals/generated-output/*|docs/10-reference-library.md|docs/00-principles.md|docs/01-current-voice-snapshot.md|docs/04-platform-adaptation.md|docs/12-stop-list.md|docs/13-drafting-recipes.md|docs/17-rag-style-memory.md)
+                pyproject.toml|requirements.txt|requirements-dev.txt|src/tone_of_voice/bot.py|src/tone_of_voice/config.py|src/tone_of_voice/drafting.py|src/tone_of_voice/feedback.py|src/tone_of_voice/metrics.py|src/tone_of_voice/evals.py|src/tone_of_voice/style_memory.py|src/tone_of_voice/retrieval_experiments.py|src/tone_of_voice/generated_output_experiments.py|src/tone_of_voice/llama_index_memory.py|scripts/draft_post.py|scripts/run_generated_output_experiments.py|evals/generated-output/*|docs/10-reference-library.md|docs/00-principles.md|docs/01-current-voice-snapshot.md|docs/04-platform-adaptation.md|docs/12-stop-list.md|docs/13-drafting-recipes.md|docs/17-rag-style-memory.md)
                   should_run=true
                   break
                   ;;
