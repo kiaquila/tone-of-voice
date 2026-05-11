@@ -122,10 +122,17 @@ Run retrieval experiments:
 python3 scripts/run_retrieval_experiments.py
 ```
 
+Run generated-output A/B experiments:
+
+```bash
+python3 scripts/run_generated_output_experiments.py
+```
+
 Write a structured report:
 
 ```bash
 python3 scripts/run_retrieval_experiments.py --json-output data/working/evals/retrieval-latest.json
+python3 scripts/run_generated_output_experiments.py --json-output data/working/evals/generated-output-latest.json
 ```
 
 Use RAG-style retrieval while drafting:
@@ -193,15 +200,37 @@ This is deliberately an offline retrieval A/B harness. It does not call a model.
 Once the retrieval variants are stable, generated-text A/B tests can add model
 outputs, draft/final edit distance, and human preference labels on top.
 
+## Generated Output A/B Suite
+
+The first generated-output suite lives at:
+
+- `evals/generated-output/step6-followup-seed.json`
+
+It compares saved draft text variants for the same request across retrieval
+strategies. The default suite is fixture-based and does not call a model, so it
+can run in CI. The runner records:
+
+- draft-to-final edit metrics
+- selected variant and best-by-edit-distance variant
+- prompt reference ids and retrieved style-memory record ids
+- manual preference labels
+- common tone correction and structural notes
+
+Use the existing drafting command to generate real candidate drafts, then copy
+the inspected outputs into a generated-output suite when they are safe to commit
+or into an ignored local suite under `data/working/evals/` for private review.
+
 ## CI Behavior
 
 `baseline-checks` now runs:
 
 ```bash
 python scripts/run_retrieval_experiments.py
+python scripts/run_generated_output_experiments.py
 ```
 
-That makes retrieval regressions visible before a prompt or bot change merges.
+That makes retrieval and generated-output regressions visible before a prompt
+or bot change merges.
 
 ## Portfolio Framing
 
@@ -212,16 +241,16 @@ creates a concrete AI/ML pipeline:
 - retrieval: local TF-IDF-style ranked memory plus an opt-in LlamaIndex
   `VectorStoreIndex` path with persistent storage and metadata filters
 - generation: Anthropic prompt assembly with recorded retrieval strategy
-- evaluation: deterministic retrieval experiments in CI
+- evaluation: deterministic retrieval and generated-output experiments in CI
 - feedback: final edits become future memory records
 
 The first implementation is still local-first and CI-friendly. Future PRs can
 swap the deterministic embedding for a stronger local or provider embedding,
-then add Ragas or MLflow once generated-output contracts are stable.
+then add Ragas or MLflow on top of the generated-output contracts.
 
 ## Next Implementation Sequence
 
-1. Add generated-output A/B tests.
+1. Add generated-output A/B tests. - first offline harness complete
    - Compare drafts generated with different retrieval strategies, not only
      which references were selected.
    - Record edit distance, selected/final variant, manual preference, and common
