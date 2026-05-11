@@ -21,6 +21,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - generation workflows for drafting new posts on demand
 - feedback capture from draft-to-final edits
 - retrieval experiments for RAG-style voice memory
+- generated-output A/B experiments for draft quality comparisons
 
 ## Initial Scope
 
@@ -58,6 +59,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 - `docs/17-rag-style-memory.md` — RAG-style memory index, retrieval strategies, and experiment workflow
 - `evals/regression/` — committed draft/final eval suites
 - `evals/retrieval/` — committed retrieval experiment suites
+- `evals/generated-output/` — committed generated-output A/B suites
 - `examples/draft-request.telegram.json` — sample structured input for the local drafting MVP
 - `examples/feedback-capture.telegram.json` — sample manual feedback input
 - `specs/` — lightweight feature memory for software changes
@@ -68,7 +70,7 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
 
-The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 has a production Telegram bot in `<your group>`, and Step 6 now has local and LlamaIndex-backed RAG-style memory paths. The next sequence is generated-output A/B tests and judge-style evals before cross-platform expansion.
+The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 has a production Telegram bot in `<your group>`, and Step 6 now has local and LlamaIndex-backed RAG-style memory paths plus the first generated-output A/B harness. The next sequence is judge-style evals before cross-platform expansion.
 
 ## Using The Telegram Bot
 
@@ -159,6 +161,12 @@ Run the retrieval experiment slice:
 
 ```bash
 python3 scripts/run_retrieval_experiments.py
+```
+
+Run the generated-output A/B experiment slice:
+
+```bash
+python3 scripts/run_generated_output_experiments.py
 ```
 
 Assemble a draft with RAG-style retrieval:

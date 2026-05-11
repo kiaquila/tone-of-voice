@@ -261,6 +261,10 @@ a measurable retrieval-augmented writing pipeline.
 - The first LlamaIndex-backed path builds `Document` records from style memory,
   persists a local `VectorStoreIndex`, and evaluates the `llama_index` variant
   beside `heuristic`, `style_memory`, and `hybrid`.
+- `src/tone_of_voice/generated_output_experiments.py` and
+  `scripts/run_generated_output_experiments.py` add the first offline
+  generated-output A/B harness for comparing draft text variants, selected
+  variants, final edits, prompt metadata, and correction tags.
 
 ## Step 7 - Cross-Platform Expansion
 

@@ -40,11 +40,14 @@ Already completed:
 - Telegram bot product implementation with draft, revise, approve, status, cancel, dry-run smoke checks, and operator docs
 - RAG-style memory index, query command, retrieval strategies, and offline retrieval experiment gate
 - opt-in LlamaIndex-backed retrieval strategy with persistent local index storage
+- offline generated-output A/B experiment harness for comparing draft variants,
+  selected variants, final edits, and correction tags
 
 Next recommended steps:
 
 - continue the Step 6 follow-up sequence in `docs/17-rag-style-memory.md`:
-  generated-output A/B tests, then a Ragas or lightweight judge eval layer
+  add a Ragas or lightweight judge eval layer on top of the generated-output
+  A/B harness
 - start Step 7 cross-platform expansion only after the retrieval and generated
   output eval loops are stable enough to protect voice quality across platforms
 
@@ -217,8 +220,9 @@ Execution order:
 4. Step 4 - Regression Eval Gate - complete
 5. Step 5 - Telegram Bot Product - complete
 6. Step 6 - RAG Style Memory And Experiment Harness - complete
-7. Step 6 follow-ups - generated-output A/B tests and judge evals before cross-platform expansion
-8. Step 7 - Cross-Platform Expansion - planned after retrieval and generated-output eval loops are stable
+7. Step 6 follow-ups - generated-output A/B tests - first offline harness complete
+8. Step 6 follow-ups - judge evals before cross-platform expansion
+9. Step 7 - Cross-Platform Expansion - planned after retrieval and generated-output eval loops are stable
 
 ## Spec Pattern
 

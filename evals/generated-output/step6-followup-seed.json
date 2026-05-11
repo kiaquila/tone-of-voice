@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "name": "generated-output-ab-seed",
+  "description": "First offline generated-output A/B slice. The draft outputs are fixture text so CI can compare strategy behavior without model credentials.",
+  "defaults": {
+    "max_char_percent_changed": 100.0,
+    "max_word_percent_changed": 100.0,
+    "min_prompt_references": 3
+  },
+  "cases": [
+    {
+      "id": "telegram-generated-output-ab-loop",
+      "request": {
+        "platform": "telegram",
+        "angle": "Explain that generated-output A/B tests are the next layer after retrieval experiments",
+        "source_notes": "Step 6 can compare retrieval strategies by selected memory records. The next loop should compare actual generated drafts, selected variants, final edits, and correction tags.",
+        "constraints": [
+          "keep it grounded in the product workflow",
+          "do not sound like an eval vendor announcement",
+          "make the human editing loop visible"
+        ],
+        "topics": ["tone_of_voice", "rag", "evals", "content_workflow"],
+        "post_type": "project_update",
+        "mood": ["practical", "product_minded"],
+        "recipe": "project_update_or_launch",
+        "max_references": 5
+      },
+      "selected_variant": "hybrid",
+      "tone_corrections": ["less_generic", "make_learning_loop_concrete"],
+      "structural_notes": ["kept the eval detail after the human editing point"],
+      "notes": "Seed text is deliberately small and inspectable. Replace with real generated outputs once the first manual A/B run exists.",
+      "final_text": "Я дошла до следующего слоя в tone of voice: теперь мало понимать, какие референсы достались черновику. Нужно сравнивать сами черновики.\n\nСделала первый A/B контур: один запрос, несколько retrieval-стратегий, потом смотрим, какой текст ближе к финалу и где я руками правила тон. Это уже похоже на систему, которая учится не на ощущениях, а на следах редакторской работы.",
+      "variants": [
+        {
+          "strategy": "heuristic",
+          "preference": "rejected",
+          "tone_corrections": ["less_generic", "stronger_hook"],
+          "draft_text": "Сделала следующий шаг для tone of voice: теперь можно сравнивать не только то, какие референсы выбрались для черновика, но и сами черновики.\n\nИдея простая: один запрос, несколько retrieval-стратегий, потом смотрим, какой вариант ближе к финальному тексту. Это должно помочь меньше спорить с ощущениями и больше опираться на реальные правки."
+        },
+        {
+          "strategy": "style_memory",
+          "preference": "rejected",
+          "tone_corrections": ["add_human_wink"],
+          "draft_text": "После retrieval-экспериментов хочется проверить более честную штуку: что происходит с самим текстом.\n\nПоэтому добавила A/B слой для generated outputs. Берём один и тот же запрос, прогоняем разные retrieval-стратегии, сохраняем черновики и потом сравниваем их с финальной версией. Важный момент: победителя выбирает не метрика сама по себе, а мои реальные правки."
+        },
+        {
+          "strategy": "hybrid",
+          "preference": "selected",
+          "tone_corrections": ["tighten_opening"],
+          "draft_text": "Я дошла до следующего слоя в tone of voice: теперь мало смотреть, какие референсы достались черновику. Нужно сравнивать сами черновики.\n\nСделала первый A/B контур: один запрос, несколько retrieval-стратегий, потом видно, какой текст ближе к финалу и где я руками правила тон. Вот это уже похоже не на магию промптов, а на систему, которая учится по следам редакторской работы."
+        },
+        {
+          "strategy": "llama_index",
+          "preference": "rejected",
+          "tone_corrections": ["less_tool_first", "make_learning_loop_concrete"],
+          "draft_text": "LlamaIndex теперь не просто отдельный retrieval path, а часть следующего эксперимента.\n\nХочу сравнивать generated outputs: один и тот же запрос проходит через heuristic, style_memory, hybrid и llama_index, а потом я фиксирую выбранный вариант, финальный текст и теги правок. Так retrieval перестаёт быть внутренней инженерной метрикой и начинает отвечать на главный вопрос: какой черновик реально меньше приходится переписывать."
+        }
+      ]
+    }
+  ]
+}
