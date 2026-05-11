@@ -42,6 +42,8 @@ Already completed:
 - opt-in LlamaIndex-backed retrieval strategy with persistent local index storage
 - offline generated-output A/B experiment harness for comparing draft variants,
   selected variants, final edits, and correction tags
+- shared, path-hardened experiment CLI helpers for the regression, retrieval,
+  and generated-output harnesses
 
 Next recommended steps:
 
@@ -221,8 +223,9 @@ Execution order:
 5. Step 5 - Telegram Bot Product - complete
 6. Step 6 - RAG Style Memory And Experiment Harness - complete
 7. Step 6 follow-ups - generated-output A/B tests - first offline harness complete
-8. Step 6 follow-ups - judge evals before cross-platform expansion
-9. Step 7 - Cross-Platform Expansion - planned after retrieval and generated-output eval loops are stable
+8. Step 6 follow-ups - experiment harness hardening - complete
+9. Step 6 follow-ups - judge evals before cross-platform expansion
+10. Step 7 - Cross-Platform Expansion - planned after retrieval and generated-output eval loops are stable
 
 ## Spec Pattern
 

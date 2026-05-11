@@ -169,6 +169,10 @@ Run the generated-output A/B experiment slice:
 python3 scripts/run_generated_output_experiments.py
 ```
 
+The eval runners share the same `--suite`, `--variant` where applicable, and
+`--json-output` behavior. Suite and report paths are repository-local; use
+`data/working/evals/` for private ignored reports.
+
 Assemble a draft with RAG-style retrieval:
 
 ```bash

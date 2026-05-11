@@ -1,16 +1,21 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from tone_of_voice.config import repo_root
 from tone_of_voice.drafting import DraftRequest, build_prompt_bundle
+from tone_of_voice.config import repo_root
+from tone_of_voice.experiments_common import (
+    SCHEMA_VERSION,
+    load_json_suite,
+    optional_text as _optional_text,
+    required_text as _required_text,
+    string_list as _string_list,
+)
 from tone_of_voice.feedback import compute_revision_metrics
 
 
-SCHEMA_VERSION = 1
 DEFAULT_EVAL_SUITE = "evals/regression/step4-seed.json"
 DEFAULT_REQUIRED_CONTEXT_FILES = (
     "docs/00-principles.md",
@@ -46,10 +51,7 @@ class EvalCase:
 
 
 def load_eval_suite(path: str | Path = DEFAULT_EVAL_SUITE) -> dict[str, Any]:
-    suite_path = Path(path).expanduser()
-    if not suite_path.is_absolute():
-        suite_path = repo_root() / suite_path
-    return json.loads(suite_path.read_text(encoding="utf-8"))
+    return load_json_suite(path, label="eval suite")
 
 
 def parse_eval_cases(suite: dict[str, Any]) -> list[EvalCase]:
@@ -247,34 +249,6 @@ def format_eval_report(result: dict[str, Any]) -> str:
 
     lines.append("")
     return "\n".join(lines)
-
-
-def _required_text(data: dict[str, Any], key: str) -> str:
-    value = _optional_text(data.get(key))
-    if not value:
-        raise ValueError(f"{key} is required")
-    return value
-
-
-def _optional_text(value: Any) -> str | None:
-    text = str(value).strip() if value is not None else ""
-    return text or None
-
-
-def _string_list(
-    value: Any,
-    *,
-    default: tuple[str, ...] = (),
-) -> list[str]:
-    if value is None:
-        return list(default)
-    if isinstance(value, str):
-        values = [value]
-    elif isinstance(value, (list, tuple)):
-        values = list(value)
-    else:
-        values = [value]
-    return [str(item).strip() for item in values if str(item).strip()]
 
 
 def _contains_phrase(text: str, phrase: str) -> bool:

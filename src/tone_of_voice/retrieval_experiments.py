@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,6 +15,14 @@ from tone_of_voice.drafting import (
     load_reference_library,
     select_references,
 )
+from tone_of_voice.experiments_common import (
+    SCHEMA_VERSION,
+    load_json_suite,
+    optional_text as _optional_text,
+    required_mapping as _required_mapping,
+    required_text as _required_text,
+    string_list as _string_list,
+)
 from tone_of_voice.llama_index_memory import retrieve_llama_index_style_memory
 from tone_of_voice.style_memory import (
     StyleMemoryIndex,
@@ -25,7 +32,6 @@ from tone_of_voice.style_memory import (
 )
 
 
-SCHEMA_VERSION = 1
 DEFAULT_RETRIEVAL_SUITE = "evals/retrieval/style-memory-seed.json"
 DEFAULT_VARIANTS = ("heuristic", "style_memory", "hybrid", "llama_index")
 
@@ -47,10 +53,7 @@ class RetrievalExperimentCase:
 
 
 def load_retrieval_suite(path: str | Path = DEFAULT_RETRIEVAL_SUITE) -> dict[str, Any]:
-    suite_path = Path(path).expanduser()
-    if not suite_path.is_absolute():
-        suite_path = repo_root() / suite_path
-    return json.loads(suite_path.read_text(encoding="utf-8"))
+    return load_json_suite(path, label="retrieval suite")
 
 
 def parse_retrieval_cases(suite: dict[str, Any]) -> list[RetrievalExperimentCase]:
@@ -409,34 +412,3 @@ def interleave_unique(
             if len(merged) >= limit:
                 return tuple(merged)
     return tuple(merged)
-
-
-def _required_mapping(data: dict[str, Any], key: str) -> dict[str, Any]:
-    value = data.get(key)
-    if not isinstance(value, dict):
-        raise ValueError(f"{key} is required")
-    return value
-
-
-def _required_text(data: dict[str, Any], key: str) -> str:
-    value = _optional_text(data.get(key))
-    if not value:
-        raise ValueError(f"{key} is required")
-    return value
-
-
-def _optional_text(value: Any) -> str | None:
-    text = str(value).strip() if value is not None else ""
-    return text or None
-
-
-def _string_list(value: Any) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        values = [value]
-    elif isinstance(value, (list, tuple)):
-        values = list(value)
-    else:
-        values = [value]
-    return [str(item).strip() for item in values if str(item).strip()]

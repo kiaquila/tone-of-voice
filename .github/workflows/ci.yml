@@ -36,7 +36,8 @@ jobs:
       - name: Run unit tests
         run: python -m pytest tests
 
-      - name: Run regression eval slice
+      - name: Detect eval-impacting changes
+        id: eval_changes
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -45,89 +46,117 @@ jobs:
         run: |
           set -euo pipefail
 
-          should_run=false
-          if [ "$EVENT_NAME" = "push" ]; then
-            should_run=true
-          else
-            changed="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
-            while IFS= read -r f; do
-              case "$f" in
-                pyproject.toml|requirements.txt|requirements-dev.txt|src/tone_of_voice/bot.py|src/tone_of_voice/config.py|src/tone_of_voice/drafting.py|src/tone_of_voice/feedback.py|src/tone_of_voice/metrics.py|src/tone_of_voice/evals.py|src/tone_of_voice/llama_index_memory.py|scripts/draft_post.py|scripts/capture_feedback.py|scripts/run_regression_evals.py|evals/regression/*|docs/00-principles.md|docs/01-current-voice-snapshot.md|docs/04-platform-adaptation.md|docs/10-reference-library.md|docs/12-stop-list.md|docs/13-drafting-recipes.md)
-                  should_run=true
-                  break
-                  ;;
-              esac
-            done <<< "$changed"
-          fi
+          common_paths=(
+            "pyproject.toml"
+            "requirements.txt"
+            "requirements-dev.txt"
+            "src/tone_of_voice/config.py"
+            "src/tone_of_voice/drafting.py"
+            "src/tone_of_voice/experiments_cli.py"
+            "src/tone_of_voice/experiments_common.py"
+            "scripts/draft_post.py"
+            "docs/00-principles.md"
+            "docs/01-current-voice-snapshot.md"
+            "docs/04-platform-adaptation.md"
+            "docs/10-reference-library.md"
+            "docs/12-stop-list.md"
+            "docs/13-drafting-recipes.md"
+          )
+          regression_paths=(
+            "${common_paths[@]}"
+            "src/tone_of_voice/bot.py"
+            "src/tone_of_voice/feedback.py"
+            "src/tone_of_voice/metrics.py"
+            "src/tone_of_voice/evals.py"
+            "src/tone_of_voice/llama_index_memory.py"
+            "scripts/capture_feedback.py"
+            "scripts/run_regression_evals.py"
+            "evals/regression/*"
+          )
+          retrieval_paths=(
+            "${common_paths[@]}"
+            "src/tone_of_voice/bot.py"
+            "src/tone_of_voice/evals.py"
+            "src/tone_of_voice/style_memory.py"
+            "src/tone_of_voice/retrieval_experiments.py"
+            "src/tone_of_voice/llama_index_memory.py"
+            "scripts/run_retrieval_experiments.py"
+            "scripts/build_style_memory_index.py"
+            "scripts/query_style_memory.py"
+            "evals/retrieval/*"
+            "docs/17-rag-style-memory.md"
+          )
+          generated_output_paths=(
+            "${common_paths[@]}"
+            "src/tone_of_voice/bot.py"
+            "src/tone_of_voice/feedback.py"
+            "src/tone_of_voice/metrics.py"
+            "src/tone_of_voice/evals.py"
+            "src/tone_of_voice/style_memory.py"
+            "src/tone_of_voice/retrieval_experiments.py"
+            "src/tone_of_voice/generated_output_experiments.py"
+            "src/tone_of_voice/llama_index_memory.py"
+            "scripts/run_generated_output_experiments.py"
+            "evals/generated-output/*"
+            "docs/17-rag-style-memory.md"
+          )
 
-          if [ "$should_run" = "false" ]; then
-            echo "No drafting, voice-memory, or eval changes detected; skipping regression eval slice."
+          mark_all_true() {
+            echo "regression=true" >> "$GITHUB_OUTPUT"
+            echo "retrieval=true" >> "$GITHUB_OUTPUT"
+            echo "generated_output=true" >> "$GITHUB_OUTPUT"
+          }
+
+          if [ "$EVENT_NAME" = "push" ]; then
+            mark_all_true
             exit 0
           fi
 
-          python scripts/run_regression_evals.py
+          changed="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
+
+          matches_any() {
+            local f pattern
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              for pattern in "$@"; do
+                case "$f" in
+                  $pattern)
+                    return 0
+                    ;;
+                esac
+              done
+            done <<< "$changed"
+            return 1
+          }
+
+          set_eval_output() {
+            local name="$1"
+            shift
+            local should_run=false
+            if matches_any "$@"; then
+              should_run=true
+            fi
+            echo "${name}=${should_run}" >> "$GITHUB_OUTPUT"
+            echo "${name}: ${should_run}"
+          }
+
+          echo "Changed files:"
+          echo "$changed"
+          set_eval_output regression "${regression_paths[@]}"
+          set_eval_output retrieval "${retrieval_paths[@]}"
+          set_eval_output generated_output "${generated_output_paths[@]}"
+
+      - name: Run regression eval slice
+        if: steps.eval_changes.outputs.regression == 'true'
+        run: python scripts/run_regression_evals.py
 
       - name: Run retrieval experiment slice
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          EVENT_NAME: ${{ github.event_name }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          should_run=false
-          if [ "$EVENT_NAME" = "push" ]; then
-            should_run=true
-          else
-            changed="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
-            while IFS= read -r f; do
-              case "$f" in
-                pyproject.toml|requirements.txt|requirements-dev.txt|src/tone_of_voice/bot.py|src/tone_of_voice/config.py|src/tone_of_voice/evals.py|src/tone_of_voice/style_memory.py|src/tone_of_voice/retrieval_experiments.py|src/tone_of_voice/drafting.py|src/tone_of_voice/llama_index_memory.py|scripts/run_retrieval_experiments.py|scripts/build_style_memory_index.py|scripts/query_style_memory.py|evals/retrieval/*|docs/10-reference-library.md|docs/00-principles.md|docs/01-current-voice-snapshot.md|docs/04-platform-adaptation.md|docs/12-stop-list.md|docs/13-drafting-recipes.md|docs/17-rag-style-memory.md)
-                  should_run=true
-                  break
-                  ;;
-              esac
-            done <<< "$changed"
-          fi
-
-          if [ "$should_run" = "false" ]; then
-            echo "No style-memory, retrieval, or voice-doc changes detected; skipping retrieval experiment slice."
-            exit 0
-          fi
-
-          python scripts/run_retrieval_experiments.py
+        if: steps.eval_changes.outputs.retrieval == 'true'
+        run: python scripts/run_retrieval_experiments.py
 
       - name: Run generated-output experiment slice
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          EVENT_NAME: ${{ github.event_name }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          should_run=false
-          if [ "$EVENT_NAME" = "push" ]; then
-            should_run=true
-          else
-            changed="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
-            while IFS= read -r f; do
-              case "$f" in
-                pyproject.toml|requirements.txt|requirements-dev.txt|src/tone_of_voice/bot.py|src/tone_of_voice/config.py|src/tone_of_voice/drafting.py|src/tone_of_voice/feedback.py|src/tone_of_voice/metrics.py|src/tone_of_voice/evals.py|src/tone_of_voice/style_memory.py|src/tone_of_voice/retrieval_experiments.py|src/tone_of_voice/generated_output_experiments.py|src/tone_of_voice/llama_index_memory.py|scripts/draft_post.py|scripts/run_generated_output_experiments.py|evals/generated-output/*|docs/10-reference-library.md|docs/00-principles.md|docs/01-current-voice-snapshot.md|docs/04-platform-adaptation.md|docs/12-stop-list.md|docs/13-drafting-recipes.md|docs/17-rag-style-memory.md)
-                  should_run=true
-                  break
-                  ;;
-              esac
-            done <<< "$changed"
-          fi
-
-          if [ "$should_run" = "false" ]; then
-            echo "No generated-output, drafting, retrieval, or voice-doc changes detected; skipping generated-output experiment slice."
-            exit 0
-          fi
-
-          python scripts/run_generated_output_experiments.py
+        if: steps.eval_changes.outputs.generated_output == 'true'
+        run: python scripts/run_generated_output_experiments.py
 
       - name: Smoke-check CLI help
         run: |

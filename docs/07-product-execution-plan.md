@@ -265,6 +265,8 @@ a measurable retrieval-augmented writing pipeline.
   `scripts/run_generated_output_experiments.py` add the first offline
   generated-output A/B harness for comparing draft text variants, selected
   variants, final edits, prompt metadata, and correction tags.
+- The regression, retrieval, and generated-output harnesses now share
+  repository-local path handling and CLI/report-writing helpers.
 
 ## Step 7 - Cross-Platform Expansion
 
