@@ -59,13 +59,22 @@ class ResolveSessionStemTest(unittest.TestCase):
 
 class LoadProjectEnvTest(unittest.TestCase):
     def test_explicit_missing_file_raises(self) -> None:
+        # Use a path inside the allowed root (repo's parent tree) so the
+        # security guard does not pre-empt the FileNotFoundError. This
+        # test specifically exercises the "exists?" branch, not the
+        # path-confinement branch (covered in test_cli_path_hardening.py).
+        missing_path = config.repo_root() / "tests" / ".env.absent.does.not.exist"
         with self.assertRaises(FileNotFoundError):
-            config.load_project_env("/nonexistent/path/.env.absent")
+            config.load_project_env(str(missing_path))
 
     def test_explicit_existing_file_loads(self) -> None:
         import tempfile
 
-        with tempfile.TemporaryDirectory() as td:
+        # Place the env file inside the repo root, which is within the
+        # allowed root (repo's parent tree). A temp dir under /var/folders
+        # would be outside the allowed root and rejected by the new
+        # security guard.
+        with tempfile.TemporaryDirectory(dir=config.repo_root()) as td:
             env_file = Path(td) / "custom.env"
             env_file.write_text("TONE_OF_VOICE_TEST_FLAG=ok\n", encoding="utf-8")
             with mock.patch.dict(os.environ, {}, clear=False):
@@ -73,6 +82,22 @@ class LoadProjectEnvTest(unittest.TestCase):
                 resolved = config.load_project_env(str(env_file))
                 self.assertEqual(resolved, env_file.resolve())
                 self.assertEqual(os.environ.get("TONE_OF_VOICE_TEST_FLAG"), "ok")
+
+    def test_explicit_env_file_outside_allowed_root_raises(self) -> None:
+        import tempfile
+
+        # A path under /var/folders is outside both the repo and its
+        # parent tree — must fail closed with ValueError, even if the
+        # file itself exists.
+        with tempfile.TemporaryDirectory() as td:
+            outside_env = Path(td) / "external.env"
+            outside_env.write_text(
+                "TONE_OF_VOICE_TEST_FLAG=leaked\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError) as ctx:
+                config.load_project_env(str(outside_env))
+            self.assertIn("outside the allowed root", str(ctx.exception))
 
 
 class DefaultEnvCandidatesTest(unittest.TestCase):

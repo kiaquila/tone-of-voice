@@ -18,9 +18,28 @@ export function shouldRouteAiReviewRerunEvent(event, selectedAgent = "codex", co
   const agent = normalizeAgent(selectedAgent);
 
   if (event?.review) {
-    return ["codex", "gemini"].includes(agent) &&
-      isTrustedReviewLogin(event.review.user?.login, agent, config);
+    if (!["codex", "gemini"].includes(agent)) return false;
+    if (!isTrustedReviewLogin(event.review.user?.login, agent, config)) return false;
+    // Drop stale-head reviews: a trusted bot may submit a review whose
+    // commit_id is no longer the PR head (e.g. after force-push, or a
+    // late delivery for a superseded SHA). Re-running ai-review.yml for
+    // the current head SHA off the back of that review burns CI minutes
+    // and, in adversarial timing, can keep retriggering completed runs
+    // until rate limits cause a false-fail on the required check.
+    const headSha = event.pull_request?.head?.sha;
+    const reviewSha = event.review?.commit_id;
+    if (headSha && reviewSha && reviewSha !== headSha) return false;
+    return true;
   }
+
+  // Ignore edits to issue_comment events. The original `created` event
+  // already carries the gate evidence; allowing `edited` lets a trusted
+  // bot (or a compromised token re-editing the bot's comment) re-trigger
+  // the rerun pipeline indefinitely for the same SHA. This is paired
+  // with `issue_comment.types: [created]` in ai-review-rerun.yml — both
+  // layers must agree, since one layer is workflow-level and the other
+  // is required-check-aware code.
+  if (event?.action === "edited") return false;
 
   if (!event?.issue?.pull_request || !event?.comment) return false;
   const body = String(event.comment.body || "");
@@ -81,15 +100,23 @@ async function defaultRequest(token, repository, path, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+// Hard-cap pagination to keep this rerun helper from exhausting the
+// GitHub API quota for a single job. Ten pages = 1000 workflow runs,
+// which is far beyond the window where the head SHA we care about can
+// still be relevant. Without a cap, a noisy workflow history can stall
+// the required check long enough to hit a rate-limit-induced false-fail.
+const LIST_PAGINATED_MAX_PAGES = 10;
+
 async function listPaginated(request, token, repository, path) {
   const items = [];
   const separator = path.includes("?") ? "&" : "?";
-  for (let page = 1; ; page += 1) {
+  for (let page = 1; page <= LIST_PAGINATED_MAX_PAGES; page += 1) {
     const data = await request(token, repository, `${path}${separator}per_page=100&page=${page}`);
     const batch = data.workflow_runs || data;
     items.push(...batch);
     if (batch.length < 100) return items;
   }
+  return items;
 }
 
 export async function rerunAiReviewForPrHead({

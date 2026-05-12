@@ -4,7 +4,13 @@ on:
   pull_request_review:
     types: [submitted]
   issue_comment:
-    types: [created, edited]
+    # `edited` is deliberately omitted: a trusted bot (or a compromised
+    # bot token) editing an old comment must not re-trigger the rerun
+    # pipeline for the same SHA. Acting only on freshly created comments
+    # makes the rerun strictly monotonic in event flow. scripts/ai-review-rerun.mjs
+    # enforces the same guard with `event.action !== 'edited'` so both
+    # layers fail closed if the workflow-level filter is bypassed.
+    types: [created]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -13,6 +19,22 @@ permissions:
   actions: write
   contents: read
   pull-requests: read
+
+# Serialize reruns per pull-request. Without this, multiple trusted
+# review/comment events for the same PR can spawn parallel rerun jobs,
+# each racing to dispatch /rerun against the same workflow run. The
+# cancel-in-progress strategy keeps only the latest rerun request alive,
+# which matches the underlying semantics: there is one head SHA per PR
+# at any moment, and the most recent evidence is the only one that needs
+# to be acted on.
+concurrency:
+  group: >-
+    ai-review-rerun-${{
+      github.event.pull_request.number ||
+      github.event.issue.number ||
+      github.ref
+    }}
+  cancel-in-progress: true
 
 jobs:
   ai-review-rerun:

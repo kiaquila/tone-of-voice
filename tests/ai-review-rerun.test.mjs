@@ -36,6 +36,95 @@ test("AI Review rerun event filter accepts trusted selected-agent evidence", () 
   );
 });
 
+test("AI Review rerun event filter rejects edited issue_comment events", () => {
+  // Even a trusted bot's edited comment must not retrigger rerun: the
+  // creation event already carried the gate evidence, and an edited
+  // event lets a bot (or a compromised token) loop the rerun pipeline
+  // by re-editing the same comment.
+  assert.equal(
+    shouldRouteAiReviewRerunEvent(
+      {
+        action: "edited",
+        issue: { pull_request: {} },
+        comment: {
+          body: "Codex Review: Didn't find any major issues.",
+          user: { login: "chatgpt-codex-connector[bot]" }
+        }
+      },
+      "codex"
+    ),
+    false
+  );
+
+  // `created` (or any non-edited) action still routes.
+  assert.equal(
+    shouldRouteAiReviewRerunEvent(
+      {
+        action: "created",
+        issue: { pull_request: {} },
+        comment: {
+          body: "Codex Review: Didn't find any major issues.",
+          user: { login: "chatgpt-codex-connector[bot]" }
+        }
+      },
+      "codex"
+    ),
+    true
+  );
+});
+
+test("AI Review rerun event filter rejects stale-head reviews", () => {
+  // A trusted bot review whose commit_id is not the current PR head SHA
+  // must NOT trigger a rerun. Otherwise an old review delivered late
+  // (e.g. after a force-push) would burn a rerun against the wrong
+  // workflow run and, in adversarial timing, keep retriggering until
+  // rate limits cause a false-fail on the required check.
+  assert.equal(
+    shouldRouteAiReviewRerunEvent(
+      {
+        pull_request: { head: { sha: "newhead" } },
+        review: {
+          commit_id: "oldhead",
+          user: { login: "chatgpt-codex-connector[bot]" }
+        }
+      },
+      "codex"
+    ),
+    false
+  );
+
+  // Same review on the current head still routes.
+  assert.equal(
+    shouldRouteAiReviewRerunEvent(
+      {
+        pull_request: { head: { sha: "newhead" } },
+        review: {
+          commit_id: "newhead",
+          user: { login: "chatgpt-codex-connector[bot]" }
+        }
+      },
+      "codex"
+    ),
+    true
+  );
+
+  // Untrusted reviewer with matching SHA must still be rejected — the
+  // trust check is independent of the SHA check.
+  assert.equal(
+    shouldRouteAiReviewRerunEvent(
+      {
+        pull_request: { head: { sha: "newhead" } },
+        review: {
+          commit_id: "newhead",
+          user: { login: "random-user" }
+        }
+      },
+      "codex"
+    ),
+    false
+  );
+});
+
 test("AI Review rerun selector ignores dispatch runs and reports success states", () => {
   const successRun = {
     id: 11,

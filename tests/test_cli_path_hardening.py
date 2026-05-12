@@ -79,6 +79,39 @@ class CliPathHardeningTest(unittest.TestCase):
 
             self.assert_path_error(result, "draft request")
 
+    def test_load_project_env_rejects_env_file_outside_allowed_root(self) -> None:
+        # --env-file must be confined to the repo and its parent tree
+        # (where the sibling vb-influencer repo lives). A path under
+        # /tmp escapes both — load_project_env must refuse to load it.
+        from tone_of_voice.config import load_project_env
+
+        with tempfile.TemporaryDirectory() as td:
+            outside_env = Path(td) / "malicious.env"
+            outside_env.write_text("ANTHROPIC_API_KEY=stolen\n", encoding="utf-8")
+
+            with self.assertRaises(ValueError) as ctx:
+                load_project_env(str(outside_env))
+
+            self.assertIn("--env-file resolved to", str(ctx.exception))
+            self.assertIn("outside the allowed root", str(ctx.exception))
+
+    def test_load_project_env_accepts_env_file_inside_repo(self) -> None:
+        # A legitimate --env-file inside the repo loads without error.
+        from tone_of_voice.config import load_project_env
+
+        with tempfile.TemporaryDirectory(dir=repo_root()) as inside_dir:
+            inside_env = Path(inside_dir) / "local.env"
+            inside_env.write_text(
+                "TONE_OF_VOICE_TEST_ENV_VAR=loaded\n",
+                encoding="utf-8",
+            )
+            try:
+                result = load_project_env(str(inside_env))
+            finally:
+                os.environ.pop("TONE_OF_VOICE_TEST_ENV_VAR", None)
+
+            self.assertEqual(result, inside_env.resolve())
+
     def test_capture_feedback_rejects_embedded_artifact_outside_repo(self) -> None:
         with tempfile.TemporaryDirectory(dir=repo_root()) as inside_dir:
             with tempfile.TemporaryDirectory() as outside_dir:

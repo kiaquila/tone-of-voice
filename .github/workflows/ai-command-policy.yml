@@ -13,6 +13,19 @@ permissions:
   issues: write
   pull-requests: write
 
+# Serialize command-policy jobs per PR/issue. Trusted reviewers can
+# legitimately issue multiple `@codex review` / `@claude review` commands
+# in quick succession; without a concurrency group, each new command
+# races the previous one and posts duplicate request markers. Cancel-in-
+# progress collapses bursts to the latest command, which is the desired
+# behaviour for the routing layer.
+concurrency:
+  group: >-
+    ai-command-policy-${{
+      github.event.issue.number || github.ref
+    }}
+  cancel-in-progress: true
+
 jobs:
   ai-command-policy:
     name: ai-command-policy

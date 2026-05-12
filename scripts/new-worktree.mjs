@@ -14,7 +14,17 @@ if (!slug) {
   process.exit(1);
 }
 
-const safeSlug = slug.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+// Cap to 80 chars after normalization: long slugs produce unwieldy
+// branch names and unwieldy worktree paths, and at some path-component
+// length limit (varies by OS) `git worktree add` fails with an opaque
+// error rather than the obvious "branch name too long". A hard cap here
+// turns the failure mode into a clean truncation.
+const safeSlug = slug
+  .toLowerCase()
+  .replace(/[^a-z0-9._-]+/g, "-")
+  .replace(/^-+|-+$/g, "")
+  .slice(0, 80)
+  .replace(/^-+|-+$/g, "");
 const branch = args.branch || `codex/${safeSlug}`;
 const baseBranch = config.defaultBaseBranch || "main";
 const base = args.base || `origin/${baseBranch}`;

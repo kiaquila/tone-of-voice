@@ -133,7 +133,17 @@ jobs:
           AI_REVIEW_PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
           AI_REVIEW_HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
           AI_REVIEW_TRIGGER_MODE: ${{ steps.policy.outputs.trigger_mode }}
-          AI_REVIEW_WAIT_MS: "30000"
+          # 30s was too aggressive in practice: Codex Cloud typically posts
+          # its summary 60–120s after the trigger comment, and a sub-minute
+          # wait window made the first required-check run fail by design on
+          # every fresh PR, relying on ai-review-rerun.yml to converge. That
+          # works, but a steady-state false-fail on every PR cycle eats CI
+          # minutes and trains contributors to ignore the red check. 120s
+          # gives Codex a realistic chance to land its evidence within the
+          # initial run while keeping total runtime well under the 30-minute
+          # job timeout. ai-review-rerun.yml still provides the self-heal
+          # path if Codex is slower or the event arrives after the window.
+          AI_REVIEW_WAIT_MS: "120000"
           AI_REVIEW_POLL_MS: "5000"
           AI_REVIEW_MAX_POLL_MS: "10000"
           AI_REVIEW_DEBOUNCE_MS: "5000"

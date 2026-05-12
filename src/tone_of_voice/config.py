@@ -43,6 +43,21 @@ def default_env_candidates() -> list[Path]:
 def load_project_env(explicit_env_file: str | None = None) -> Path | None:
     if explicit_env_file:
         env_path = Path(explicit_env_file).expanduser().resolve()
+        # Confine env files to the repo and its parent directory tree.
+        # The parent tree is where the sibling `vb-influencer` repo lives
+        # and legitimately shares credentials (Telethon API_ID/HASH,
+        # session). Allowing `--env-file` to point anywhere on disk lets
+        # a caller swap in `/tmp/malicious.env` or a symlink to a
+        # secrets-bearing path, then ride the dotenv `override=False`
+        # semantics to inject e.g. ANTHROPIC_API_KEY and redirect traffic.
+        # `default_env_candidates` enforces the same boundary for the
+        # fallback discovery path; both paths now agree.
+        allowed_root = repo_root().parent.resolve()
+        if not env_path.is_relative_to(allowed_root):
+            raise ValueError(
+                f"--env-file resolved to {env_path}, "
+                f"which is outside the allowed root {allowed_root}"
+            )
         if not env_path.exists():
             raise FileNotFoundError(f"Env file not found: {env_path}")
         load_dotenv(env_path, override=False)
