@@ -112,11 +112,18 @@ class DefaultEnvCandidatesTest(unittest.TestCase):
         self.assertEqual(candidates[0], config.repo_root() / ".env")
 
     def test_fallback_env_var_overrides_default(self) -> None:
+        # Pick an absolute path that lives under the allowed root
+        # (repo's parent tree). The previous version of this test used
+        # /tmp/alt.env, which is outside the new boundary applied to
+        # absolute paths too (closes Codex P2).
+        parent_env = (config.repo_root().parent / "alt.env").resolve()
         with mock.patch.dict(
-            os.environ, {"TONE_OF_VOICE_FALLBACK_ENV": "/tmp/alt.env"}, clear=False
+            os.environ,
+            {"TONE_OF_VOICE_FALLBACK_ENV": str(parent_env)},
+            clear=False,
         ):
             candidates = config.default_env_candidates()
-        self.assertIn(Path("/tmp/alt.env"), candidates)
+        self.assertIn(parent_env, candidates)
 
     def test_relative_traversal_outside_parent_raises(self) -> None:
         with mock.patch.dict(
@@ -126,6 +133,20 @@ class DefaultEnvCandidatesTest(unittest.TestCase):
         ):
             with self.assertRaises(ValueError):
                 config.default_env_candidates()
+
+    def test_absolute_path_outside_allowed_root_raises(self) -> None:
+        # The new boundary rejects absolute paths outside the parent
+        # tree as well — without this guard, TONE_OF_VOICE_FALLBACK_ENV
+        # could redirect dotenv loading to e.g. /tmp/malicious.env and
+        # inject secrets into the CLIs.
+        with mock.patch.dict(
+            os.environ,
+            {"TONE_OF_VOICE_FALLBACK_ENV": "/tmp/outside-allowed-root.env"},
+            clear=False,
+        ):
+            with self.assertRaises(ValueError) as ctx:
+                config.default_env_candidates()
+            self.assertIn("outside the allowed root", str(ctx.exception))
 
 
 if __name__ == "__main__":
