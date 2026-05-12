@@ -51,7 +51,7 @@ test("AI review request markers bind trusted comments to a head SHA", () => {
   }, "codex", "abc123def456"), false);
 });
 
-test("Codex no-findings summary requires trusted bot and matching marker when no SHA is present", () => {
+test("Codex no-findings summary requires SHA-bound evidence in the body", () => {
   const requestMarker = {
     agent: "codex",
     sha: "abc123def456",
@@ -61,24 +61,51 @@ test("Codex no-findings summary requires trusted bot and matching marker when no
     sourceCommentId: "10"
   };
 
+  // SHA-less body must be rejected even when a matching request marker
+  // exists with timestamps that previously satisfied the fallback. The
+  // marker can be honestly recorded for the current head while Codex
+  // Cloud delivers a delayed reply about an older head (Codex P1 review).
   assert.equal(
     isAcceptableCodexSummaryComment({
       body: "Codex Review: Didn't find any major issues.",
       user: { login: "chatgpt-codex-connector[bot]" },
       created_at: "2026-05-12T19:32:55Z"
     }, "abc123def456", requestMarker),
+    false
+  );
+
+  // Body that includes the full head SHA is accepted.
+  assert.equal(
+    isAcceptableCodexSummaryComment({
+      body: "Codex Review: Didn't find any major issues for abc123def456.",
+      user: { login: "chatgpt-codex-connector[bot]" },
+      created_at: "2026-05-12T19:32:55Z"
+    }, "abc123def456", requestMarker),
     true
   );
 
+  // Body that includes only the short (10-char) head SHA is accepted.
   assert.equal(
     isAcceptableCodexSummaryComment({
-      body: "Codex Review: Didn't find any major issues.",
+      body: "Codex Review: Didn't find any major issues for abc123def4.",
+      user: { login: "chatgpt-codex-connector[bot]" },
+      created_at: "2026-05-12T19:32:55Z"
+    }, "abc123def456", requestMarker),
+    true
+  );
+
+  // Untrusted login is rejected regardless of SHA presence.
+  assert.equal(
+    isAcceptableCodexSummaryComment({
+      body: "Codex Review: Didn't find any major issues for abc123def456.",
       user: { login: "random-user" },
       created_at: "2026-05-12T19:32:55Z"
     }, "abc123def456", requestMarker),
     false
   );
 
+  // SHA-less body without any marker is rejected (was already false
+  // pre-fix; kept as a regression sentinel).
   assert.equal(
     isAcceptableCodexSummaryComment({
       body: "Codex Review: Didn't find any major issues.",

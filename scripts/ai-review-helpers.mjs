@@ -373,7 +373,31 @@ export function extractCodexPriority(body) {
   return match ? Number(match[1]) : null;
 }
 
-export function isAcceptableCodexSummaryComment(comment, headSha, requestMarker = null, config = {}) {
+// Accept a Codex "no major issues" summary comment as evidence for the
+// current head SHA ONLY if the comment body explicitly references that
+// SHA (full or first 10 chars). The previous timestamp-only fallback —
+// trust a SHA-less summary when a matching request marker was recorded
+// before the comment arrived — was a bypass class flagged by Codex P1:
+//
+//   t1: head A pushed
+//   t2: trusted `@codex review` for A (Codex Cloud queues a job)
+//   t3: head B pushed
+//   t4: trusted `@codex review` for B → marker.sourceCommentCreatedAt=t4
+//   t5: Codex Cloud finally replies to the t2 trigger (about A), but
+//       posts the summary at t5 > t4
+//
+//   `hasHeadUpdateBetweenTimestamps(timeline, t4, t5)` (called by the
+//   gate after this function) only looks for pushes between t4 and t5;
+//   the A→B push at t3 is before t4 and would not be caught, so the
+//   stale A summary would be accepted as evidence for B.
+//
+// The only safe form of comment-style evidence is one whose body is
+// bound to a specific head SHA. Review-state evidence (PR reviews with
+// `commit_id`) remains supported and unaffected — see
+// `classifyCodexNativeReview` which enforces `review.commit_id === headSha`
+// directly. `requestMarker` is retained in the signature for caller
+// compatibility but is intentionally no longer consulted.
+export function isAcceptableCodexSummaryComment(comment, headSha, _requestMarker = null, config = {}) {
   const body = String(comment?.body || "").trim();
   const login = normalizeLogin(comment?.user?.login);
   if (!isTrustedReviewLogin(login, "codex", config)) return false;
@@ -381,17 +405,7 @@ export function isAcceptableCodexSummaryComment(comment, headSha, requestMarker 
   if (!/did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues/i.test(body)) return false;
 
   const shortSha = String(headSha || "").slice(0, 10);
-  if (shortSha && (body.includes(headSha) || body.includes(shortSha))) return true;
-
-  if (!requestMarker || requestMarker.agent !== "codex" || requestMarker.sha !== headSha) return false;
-  const requestedAt = Date.parse(
-    requestMarker.sourceCommentCreatedAt ||
-    requestMarker.requestedAt ||
-    requestMarker.commentCreatedAt ||
-    ""
-  );
-  const createdAt = Date.parse(comment?.created_at || "");
-  return Number.isFinite(requestedAt) && Number.isFinite(createdAt) && createdAt >= requestedAt;
+  return Boolean(shortSha && (body.includes(headSha) || body.includes(shortSha)));
 }
 
 export function hasHeadUpdateBetweenTimestamps(timeline = [], startCreatedAt, endCreatedAt) {
