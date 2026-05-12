@@ -19,8 +19,8 @@
 - [x] T012 Update README, delivery workflow, roadmap, and product execution
   plan.
 - [x] T013 Add Node process scripts and package metadata.
-- [ ] T014 Add event-driven AI review scripts/workflows.
-- [ ] T015 Add Node helper tests for AI review rerun behavior.
+- [x] T014 Add event-driven AI review scripts/workflows.
+- [x] T015 Add Node helper tests for AI review rerun behavior.
 
 ## Verification
 
