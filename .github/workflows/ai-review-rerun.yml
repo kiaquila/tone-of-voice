@@ -20,13 +20,16 @@ permissions:
   contents: read
   pull-requests: read
 
-# Serialize reruns per pull-request. Without this, multiple trusted
-# review/comment events for the same PR can spawn parallel rerun jobs,
-# each racing to dispatch /rerun against the same workflow run. The
-# cancel-in-progress strategy keeps only the latest rerun request alive,
-# which matches the underlying semantics: there is one head SHA per PR
-# at any moment, and the most recent evidence is the only one that needs
-# to be acted on.
+# Serialize reruns per pull-request WITHOUT cancel-in-progress. The
+# workflow-level `if` filter requires `user.type == 'Bot'` plus a body
+# prefix match, but a non-Codex bot (e.g. a misconfigured integration
+# or a future supply-chain compromise) could legitimately post a
+# `Codex Review:`-prefixed comment and enter this job. With cancel-in-
+# progress enabled, that bot could repeatedly cancel an in-progress
+# trusted rerun job. The downstream guard in scripts/ai-review-rerun.mjs
+# (`isTrustedReviewLogin`) refuses to act on untrusted bots, so the
+# safest concurrency strategy is to queue rather than cancel — trusted
+# jobs complete, untrusted jobs run after and no-op on the trust check.
 concurrency:
   group: >-
     ai-review-rerun-${{
@@ -34,7 +37,7 @@ concurrency:
       github.event.issue.number ||
       github.ref
     }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   ai-review-rerun:

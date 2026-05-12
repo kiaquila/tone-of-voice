@@ -13,18 +13,21 @@ permissions:
   issues: write
   pull-requests: write
 
-# Serialize command-policy jobs per PR/issue. Trusted reviewers can
-# legitimately issue multiple `@codex review` / `@claude review` commands
-# in quick succession; without a concurrency group, each new command
-# races the previous one and posts duplicate request markers. Cancel-in-
-# progress collapses bursts to the latest command, which is the desired
-# behaviour for the routing layer.
+# Serialize command-policy jobs per PR/issue WITHOUT cancel-in-progress.
+# The workflow `if` filter accepts any non-bot commenter whose body
+# contains `@codex`/`@claude`/`/gemini review`; trust enforcement lives
+# downstream in scripts/ai-command-policy.mjs. With cancel-in-progress
+# enabled, an untrusted commenter could spam command-like comments to
+# cancel an in-progress trusted routing job before it records the
+# request marker or kicks the AI Review rerun, stranding the required
+# gate. Queueing instead lets trusted jobs run to completion and lets
+# untrusted entrants fail the downstream trust check on their own turn.
 concurrency:
   group: >-
     ai-command-policy-${{
       github.event.issue.number || github.ref
     }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   ai-command-policy:
