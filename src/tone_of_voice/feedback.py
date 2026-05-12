@@ -13,6 +13,7 @@ from typing import Any, Sequence
 
 from tone_of_voice.config import repo_root
 from tone_of_voice.drafting import ALLOWED_PLATFORMS
+from tone_of_voice.experiments_common import resolve_repo_path
 from tone_of_voice.metrics import EMOJI_PATTERN
 
 
@@ -117,13 +118,19 @@ def load_feedback_input(
     path: str | Path,
     *,
     source_draft_artifact: str | Path | None = None,
+    root: Path | None = None,
 ) -> FeedbackInput:
-    input_path = Path(path).expanduser().resolve()
+    input_path = (
+        resolve_repo_path(path, root=root, label="feedback input")
+        if root is not None
+        else Path(path).expanduser().resolve()
+    )
     data = json.loads(input_path.read_text(encoding="utf-8"))
     artifact_path = _resolve_artifact_path(
         source_draft_artifact,
         data.get("source_draft_artifact"),
         base_dir=input_path.parent,
+        root=root,
     )
     artifact = load_draft_artifact(artifact_path) if artifact_path else None
     return FeedbackInput.from_mapping(
@@ -431,11 +438,17 @@ def format_feedback_summary_markdown(summary: dict[str, Any]) -> str:
 def read_feedback_input_from_stdin(
     *,
     source_draft_artifact: str | Path | None = None,
+    root: Path | None = None,
 ) -> FeedbackInput:
     import sys
 
     data = json.load(sys.stdin)
-    artifact_path = source_draft_artifact or data.get("source_draft_artifact")
+    artifact_path = _resolve_artifact_path(
+        source_draft_artifact,
+        data.get("source_draft_artifact"),
+        base_dir=root or repo_root(),
+        root=root,
+    )
     artifact = load_draft_artifact(artifact_path) if artifact_path else None
     return FeedbackInput.from_mapping(
         data,
@@ -497,15 +510,23 @@ def _resolve_artifact_path(
     embedded: Any,
     *,
     base_dir: Path,
+    root: Path | None = None,
 ) -> Path | None:
     if explicit is not None:
-        return Path(explicit).expanduser()
+        return (
+            resolve_repo_path(explicit, root=root, label="draft artifact")
+            if root is not None
+            else Path(explicit).expanduser()
+        )
     if not embedded:
         return None
     embedded_path = Path(str(embedded)).expanduser()
-    if embedded_path.is_absolute():
-        return embedded_path
-    return base_dir / embedded_path
+    candidate = embedded_path if embedded_path.is_absolute() else base_dir / embedded_path
+    return (
+        resolve_repo_path(candidate, root=root, label="draft artifact")
+        if root is not None
+        else candidate
+    )
 
 
 def _normalize_token(value: str) -> str:

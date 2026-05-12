@@ -13,6 +13,7 @@ from tone_of_voice.drafting import (
     generate_with_anthropic_messages,
     write_draft_artifact,
 )
+from tone_of_voice.experiments_common import resolve_repo_path
 
 
 def parse_args() -> argparse.Namespace:
@@ -67,14 +68,21 @@ def parse_args() -> argparse.Namespace:
 def load_request(path: str) -> DraftRequest:
     if path == "-":
         return DraftRequest.from_mapping(json.load(sys.stdin))
-    with open(path, encoding="utf-8") as fh:
+    request_path = resolve_repo_path(path, label="draft request")
+    with request_path.open(encoding="utf-8") as fh:
         return DraftRequest.from_mapping(json.load(fh))
 
 
 def main() -> int:
     args = parse_args()
+    try:
+        output_dir = resolve_repo_path(args.output_dir, label="output dir")
+        request = load_request(args.request)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
     load_project_env(args.env_file)
-    request = load_request(args.request)
     if args.retrieval_strategy:
         request = DraftRequest.from_mapping(
             {**request.to_dict(), "retrieval_strategy": args.retrieval_strategy}
@@ -93,7 +101,7 @@ def main() -> int:
 
     artifact_path, prompt_path, artifact = write_draft_artifact(
         bundle,
-        output_dir=args.output_dir,
+        output_dir=output_dir,
         draft=draft,
         backend=backend,
         response_data=response_data,
