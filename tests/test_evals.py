@@ -70,8 +70,8 @@ class EvalSuiteTest(unittest.TestCase):
         self.assertFalse(result["passed"])
         self.assertIn("draft contains banned phrase", result["cases"][0]["failures"][0])
 
-    def test_load_eval_suite_resolves_relative_paths_from_repo_root(self) -> None:
-        with tempfile.TemporaryDirectory() as td:
+    def test_load_eval_suite_accepts_repo_local_paths(self) -> None:
+        with tempfile.TemporaryDirectory(dir=repo_root()) as td:
             suite_path = Path(td) / "suite.json"
             suite_path.write_text(
                 json.dumps(

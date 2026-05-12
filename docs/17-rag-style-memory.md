@@ -135,6 +135,10 @@ python3 scripts/run_retrieval_experiments.py --json-output data/working/evals/re
 python3 scripts/run_generated_output_experiments.py --json-output data/working/evals/generated-output-latest.json
 ```
 
+Experiment CLI paths are repository-local by design. Use ignored paths such as
+`data/working/evals/` for private suites and generated JSON reports; parent
+directory escape attempts through `--suite` or `--json-output` fail fast.
+
 Use RAG-style retrieval while drafting:
 
 ```bash
@@ -227,6 +231,11 @@ arrives once manual A/B drafts populate additional cases. The winner is chosen
 by objective edit metrics first (`best_by_edit_count`, then median word/char
 change); the human `selected_count` is only a tie-breaker.
 
+Do not promote locally ignored or private draft artifacts into this seed unless
+the final text is safe to commit. The target maturity is 2 to 3 real A/B cases
+with final edits, but that waits for actual draft/final pairs rather than
+invented fixture text.
+
 ## CI Behavior
 
 `baseline-checks` now runs:
@@ -238,6 +247,10 @@ python scripts/run_generated_output_experiments.py
 
 That makes retrieval and generated-output regressions visible before a prompt
 or bot change merges.
+
+The workflow detects eval-impacting file changes once and feeds three outputs:
+regression, retrieval, and generated output. Changes to shared experiment CLI or
+path helpers trigger all relevant eval slices.
 
 ## Portfolio Framing
 
@@ -263,11 +276,17 @@ then add Ragas or MLflow on top of the generated-output contracts.
    - Record edit distance, selected/final variant, manual preference, and common
      correction tags.
 
-2. Add Ragas or a lightweight judge-based eval layer.
+2. Harden experiment harness internals. - complete
+   - Shared CLI/path helpers now back the regression, retrieval, and
+     generated-output runners.
+   - CI computes eval-impacting path changes once and fans out to the relevant
+     slices.
+
+3. Add Ragas or a lightweight judge-based eval layer.
    - Use it after real generated drafts and final edits exist.
    - Evaluate generated output quality, context relevance, and whether retrieved
      memory was actually useful.
 
-3. Then continue Step 7 cross-platform expansion.
+4. Then continue Step 7 cross-platform expansion.
    - Expand LinkedIn and Threads on top of the retrieval and eval surface rather
      than stretching the Telegram bot before the RAG loop is measurable.

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,11 +12,18 @@ from tone_of_voice.drafting import (
     DraftRequest,
     build_prompt_bundle,
 )
+from tone_of_voice.experiments_common import (
+    SCHEMA_VERSION,
+    load_json_suite,
+    optional_text as _optional_text,
+    required_mapping as _required_mapping,
+    required_text as _required_text,
+    string_list as _string_list,
+)
 from tone_of_voice.feedback import compute_revision_metrics
 from tone_of_voice.style_memory import normalize_token
 
 
-SCHEMA_VERSION = 1
 DEFAULT_GENERATED_OUTPUT_SUITE = "evals/generated-output/step6-followup-seed.json"
 DEFAULT_VARIANTS = ("heuristic", "style_memory", "hybrid", "llama_index")
 
@@ -56,10 +62,7 @@ class GeneratedOutputCase:
 def load_generated_output_suite(
     path: str | Path = DEFAULT_GENERATED_OUTPUT_SUITE,
 ) -> dict[str, Any]:
-    suite_path = Path(path).expanduser()
-    if not suite_path.is_absolute():
-        suite_path = repo_root() / suite_path
-    return json.loads(suite_path.read_text(encoding="utf-8"))
+    return load_json_suite(path, label="generated-output suite")
 
 
 def parse_generated_output_cases(
@@ -486,25 +489,6 @@ def _variant_items(value: Any) -> list[dict[str, Any]]:
     return []
 
 
-def _required_mapping(data: dict[str, Any], key: str) -> dict[str, Any]:
-    value = data.get(key)
-    if not isinstance(value, dict):
-        raise ValueError(f"{key} is required")
-    return value
-
-
-def _required_text(data: dict[str, Any], key: str) -> str:
-    value = _optional_text(data.get(key))
-    if not value:
-        raise ValueError(f"{key} is required")
-    return value
-
-
-def _optional_text(value: Any) -> str | None:
-    text = str(value).strip() if value is not None else ""
-    return text or None
-
-
 def _optional_token(value: Any) -> str | None:
     text = _optional_text(value)
     return normalize_token(text) if text else None
@@ -526,18 +510,6 @@ def _normalize_strategy(value: str) -> str:
         allowed = ", ".join(sorted(ALLOWED_RETRIEVAL_STRATEGIES))
         raise ValueError(f"retrieval strategy must be one of: {allowed}")
     return strategy
-
-
-def _string_list(value: Any) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        values = [value]
-    elif isinstance(value, (list, tuple)):
-        values = list(value)
-    else:
-        values = [value]
-    return [str(item).strip() for item in values if str(item).strip()]
 
 
 def _token_list(value: Any) -> list[str]:
