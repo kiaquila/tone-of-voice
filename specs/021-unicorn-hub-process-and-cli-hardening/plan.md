@@ -58,17 +58,19 @@ repository control-plane scripts.
 
 | Acceptance criterion | Evidence |
 | --- | --- |
-| AC-001 | `python scripts/check_feature_memory.py --worktree` and PR `guard` |
-| AC-002 | Python tests for path escape rejection |
-| AC-003 | Test/docs explicitly leave `--env-file` as an external-path exception |
-| AC-004 | Node tests for missing-marker fast-fail / gate summary behavior where practical |
-| AC-005 | Node tests for command-policy marker and rerun selection |
-| AC-006 | Node tests for trusted review evidence routing |
-| AC-007 | Node helper tests for stale/untrusted evidence rejection |
+| AC-001 | `pnpm run preflight` includes `python scripts/check_feature_memory.py --worktree`; PR `guard` will verify branch diff |
+| AC-002 | `tests/test_cli_path_hardening.py` plus `pnpm run preflight` |
+| AC-003 | README documents `draft_post.py --env-file` as the explicit external credential-file exception |
+| AC-004 | `tests/ai-review-helpers.test.mjs`, `tests/ai-review-rerun.test.mjs`, and `node --test tests/*.test.mjs` |
+| AC-005 | `scripts/ai-command-policy.mjs`, `scripts/ai-review-rerun.mjs`, and `tests/ai-review-rerun.test.mjs` |
+| AC-006 | `.github/workflows/ai-review-rerun.yml` plus `tests/ai-review-rerun.test.mjs` |
+| AC-007 | `tests/ai-review-helpers.test.mjs` covers marker trust, current-head binding, stale summary rejection, and untrusted summary rejection |
 | AC-008 | `pnpm run preflight` |
 
 Negative scenario evidence:
 
+- `ruby -e 'require "yaml"; Dir[".github/workflows/*.yml"].sort.each { |p| YAML.load_file(p); puts p }'`
+- `git diff --check`
 - YAML inspection confirms `pr-guard.yml` keeps checkout pinned to
   `github.event.pull_request.base.sha`.
 - `.unicorn-hub/config.json` and docs include `osv-scan` in required checks.

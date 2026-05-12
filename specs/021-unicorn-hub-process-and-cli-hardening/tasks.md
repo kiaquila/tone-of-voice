@@ -24,15 +24,15 @@
 
 ## Verification
 
-- [ ] T016 Run Python syntax validation.
-- [ ] T017 Run Python tests.
-- [ ] T018 Run regression evals.
-- [ ] T019 Run retrieval experiments.
-- [ ] T020 Run generated-output experiments.
-- [ ] T021 Run Node syntax/tests.
-- [ ] T022 Run `pnpm run preflight`.
-- [ ] T023 Run feature-memory guard in worktree mode.
-- [ ] T024 Run YAML/diff hygiene checks.
+- [x] T016 Run Python syntax validation.
+- [x] T017 Run Python tests.
+- [x] T018 Run regression evals.
+- [x] T019 Run retrieval experiments.
+- [x] T020 Run generated-output experiments.
+- [x] T021 Run Node syntax/tests.
+- [x] T022 Run `pnpm run preflight`.
+- [x] T023 Run feature-memory guard in worktree mode.
+- [x] T024 Run YAML/diff hygiene checks.
 
 ## Publish
 
@@ -55,8 +55,17 @@
   for credential reuse and does not write repository artifacts.
 - Keep event-driven AI review in its own commit because it changes required
   check timing and should be easy to inspect or revert independently.
+- Local preflight prefers `.venv/bin/python` when present so it matches the
+  repository's existing local validation environment.
+- `publish-branch.mjs` defaults to draft PRs, but supports `--ready`; this PR
+  will be opened ready because the user explicitly requested an open PR and
+  immediate Codex review.
 
 ### Known Issues
 
 - Post-merge treatment metrics for event-driven AI review will require a later
   observation window after enough PRs run through the new gate.
+- The event-driven AI Review workflow only becomes the default-branch control
+  plane after this PR merges. This PR's own review trigger may still be routed
+  partly through the pre-existing default-branch policy, so manual rerun may be
+  needed if the first required check finishes before Codex evidence appears.
