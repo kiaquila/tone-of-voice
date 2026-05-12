@@ -45,10 +45,11 @@ def run_experiment_cli(
     format_report: Callable[[dict[str, Any]], str],
     default_variants: Sequence[str] | None = None,
 ) -> int:
+    json_output = getattr(args, "json_output", None)
     try:
         output_path = (
-            resolve_repo_path(args.json_output, label="json output")
-            if args.json_output
+            resolve_repo_path(json_output, label="json output")
+            if json_output
             else None
         )
     except ValueError as exc:
@@ -72,4 +73,4 @@ def run_experiment_cli(
         written = write_json_output(output_path, result)
         print(f"JSON output: {written}")
 
-    return 0 if result["passed"] else 1
+    return 0 if result.get("passed") else 1

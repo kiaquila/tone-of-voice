@@ -170,7 +170,9 @@ python3 scripts/run_generated_output_experiments.py
 ```
 
 The eval runners share the same `--suite`, `--variant` where applicable, and
-`--json-output` behavior. Suite and report paths are repository-local; use
+`--json-output` behavior. Suite and report paths must stay inside the
+repository: parent-directory escapes, absolute paths outside the repo, and
+symlink targets outside the repo all exit with code `2`. Use
 `data/working/evals/` for private ignored reports.
 
 Assemble a draft with RAG-style retrieval:

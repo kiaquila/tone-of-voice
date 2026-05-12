@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -40,6 +41,20 @@ class ExperimentsCommonTest(unittest.TestCase):
     def test_write_json_output_rejects_parent_escape(self) -> None:
         with self.assertRaises(ValueError):
             write_json_output("../outside.json", {"passed": True}, root=repo_root())
+
+    def test_resolve_repo_path_rejects_symlink_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as outside_dir:
+            with tempfile.TemporaryDirectory() as repo_dir:
+                repo = Path(repo_dir).resolve()
+                escape = repo / "escape"
+                os.symlink(outside_dir, escape, target_is_directory=True)
+
+                with self.assertRaises(ValueError):
+                    resolve_repo_path(
+                        "escape/leak.json",
+                        root=repo,
+                        label="json output",
+                    )
 
 
 if __name__ == "__main__":
