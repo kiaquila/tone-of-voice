@@ -13,10 +13,10 @@
 - [x] T006 Harden `scripts/query_style_memory.py` user-supplied paths.
 - [x] T007 Harden `scripts/capture_feedback.py` user-supplied paths.
 - [x] T008 Add Python tests for parent, absolute, and symlink path escapes.
-- [ ] T009 Add `.unicorn-hub/config.json`.
-- [ ] T010 Add `.specify/` constitution and templates.
-- [ ] T011 Add `CLAUDE.md`.
-- [ ] T012 Update README, delivery workflow, roadmap, and product execution
+- [x] T009 Add `.unicorn-hub/config.json`.
+- [x] T010 Add `.specify/` constitution and templates.
+- [x] T011 Add `CLAUDE.md`.
+- [x] T012 Update README, delivery workflow, roadmap, and product execution
   plan.
 - [ ] T013 Add Node process scripts and package metadata.
 - [ ] T014 Add event-driven AI review scripts/workflows.

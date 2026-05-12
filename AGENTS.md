@@ -21,6 +21,14 @@ Before proposing or drafting posts, read in this order:
 11. `docs/13-drafting-recipes.md`
 12. Any later benchmark or reference-library files added to `docs/`
 
+For implementation or workflow changes, also read:
+
+1. `.specify/memory/constitution.md`
+2. `CLAUDE.md` when Claude is participating as implementation agent
+3. active `specs/<feature-id>/spec.md`
+4. active `specs/<feature-id>/plan.md`
+5. active `specs/<feature-id>/tasks.md`
+
 ## What Good Help Looks Like
 
 - Preserve the human, in-the-field quality of the voice.
@@ -42,6 +50,12 @@ Do not overwrite the voice snapshot casually. Update it only when there is meani
 ## Delivery Rule
 
 Software changes in this repository should land through pull requests and keep the documented roadmap, feature memory, and delivery workflow in sync.
+
+Feature memory follows the adapted Unicorn/SENAR contract: product-code and
+workflow PRs need a complete `specs/<feature-id>/` folder with goal, scope,
+acceptance criteria, negative scenarios, verification evidence, and process
+memory. `.unicorn-hub/config.json` records the repository-local process paths
+and required checks.
 
 ## GitHub Freshness Rule
 

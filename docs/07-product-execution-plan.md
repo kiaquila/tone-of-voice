@@ -267,6 +267,10 @@ a measurable retrieval-augmented writing pipeline.
   variants, final edits, prompt metadata, and correction tags.
 - The regression, retrieval, and generated-output harnesses now share
   repository-local path handling and CLI/report-writing helpers.
+- Follow-up process hardening imports the target-repo pieces of Unicorn Hub:
+  `.unicorn-hub/config.json`, `.specify/` constitution/templates,
+  `CLAUDE.md`, local preflight/orchestration, event-driven Codex review reruns,
+  and repository-local path hardening for the remaining path-taking CLIs.
 
 ## Step 7 - Cross-Platform Expansion
 
