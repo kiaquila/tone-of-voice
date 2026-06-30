@@ -35,6 +35,7 @@ class IsProductPathTest(unittest.TestCase):
         self.assertTrue(cfm.is_product_path("pnpm-lock.yaml"))
         self.assertTrue(cfm.is_product_path("pnpm-workspace.yaml"))
         self.assertTrue(cfm.is_product_path("pyproject.toml"))
+        self.assertTrue(cfm.is_product_path("osv-scanner.toml"))
         self.assertTrue(cfm.is_product_path("README.md"))
 
     def test_untracked_paths(self) -> None:

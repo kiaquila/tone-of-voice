@@ -17,6 +17,7 @@
     "CONTRIBUTING.md",
     "SECURITY.md",
     "pyproject.toml",
+    "osv-scanner.toml",
     "requirements.txt",
     "requirements-dev.txt",
     "package.json",

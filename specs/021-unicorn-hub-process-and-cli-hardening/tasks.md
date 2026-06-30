@@ -74,6 +74,8 @@
   files from `.unicorn-hub/`, `.specify/`, `AGENTS.md`, `CLAUDE.md`, and pnpm
   metadata, while `docs/` and `specs/` remain evidence paths rather than
   self-triggering guard inputs.
+- `.unicorn-hub/config.json` keeps `osv-scanner.toml` in `productPaths` so OSV
+  ignore-policy changes continue to require feature-memory coverage.
 
 ### Known Issues
 
