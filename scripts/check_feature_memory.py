@@ -18,6 +18,7 @@ PRODUCT_FILES = {
     "requirements.txt",
     "requirements-dev.txt",
     "pyproject.toml",
+    "osv-scanner.toml",
     "README.md",
 }
 

@@ -69,6 +69,8 @@ Already implemented:
 - feature-memory validation script
 - first live PR verification with required checks passing
 - OSV dependency scan for `requirements.txt`
+- root `osv-scanner.toml` for dated, reasoned OSV exceptions when an advisory
+  has no fixed release yet
 - Codex-only AI review gate for pull requests
 - trusted-comment policy workflow for AI commands
 - classic branch protection on `main` with required checks and admin enforcement
@@ -139,3 +141,5 @@ credentials, or AWS production credentials.
 - If a future session changes style-memory retrieval or retrieval experiment thresholds, update `docs/17-rag-style-memory.md` in the same PR.
 - If a future session changes generated-output A/B thresholds or suite shape, update `docs/17-rag-style-memory.md` in the same PR.
 - If branch protection changes, update this file in the same PR and verify with `gh api`.
+- If `osv-scanner.toml` contains an `ignoreUntil` date, revisit it before expiry
+  and remove the exception as soon as a fixed dependency path is available.

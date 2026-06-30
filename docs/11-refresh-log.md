@@ -27,6 +27,32 @@ Update the active voice snapshot when at least one of these is true:
 
 Do not update the snapshot for a single one-off joke, a temporary news burst, or a topic that does not change the writing behavior.
 
+## 2026-06-30 - Draft-vs-Published Editing Pass
+
+Source:
+
+- Platform: Telegram-oriented drafting workflow
+- Source material: recent draft-vs-published comparison from the author's editing pass
+- Source location: private/working draft feedback material, not committed as raw text
+- Review focus: how the final published voice changed hooks, self-deprecation, attribution, reader questions, emoji placement, CTAs, and anti-polish guardrails
+
+Changes made:
+
+- Updated `docs/01-current-voice-snapshot.md` with new stable Strong Signals.
+- Updated `docs/01-current-voice-snapshot.md` with new Guardrails for formatting, directive framing, abstract padding, and emoji handling.
+
+Observed voice signals:
+
+- Final edits reinforced hook variety as a voice requirement, not a surface preference.
+- Self-deprecation and small admissions worked as trust moves when tied to lived work.
+- The final voice preferred clipped asides, light attribution, noun-phrase reader prompts, and concrete gamified CTAs.
+- Emoji stayed sparse but meaningful; removing them almost entirely made the draft read flatter and less human.
+
+Snapshot decision:
+
+- Update `docs/01-current-voice-snapshot.md`.
+- Reason: the draft/final comparison showed repeated tone corrections that affect future drafting behavior, meeting the snapshot threshold for feedback-driven stable voice rules.
+
 ## 2026-04-28 - Telegram Reference Seed
 
 Source:

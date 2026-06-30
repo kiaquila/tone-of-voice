@@ -5,3 +5,6 @@
 - [x] Add `osv-scan` workflow
 - [x] Update delivery docs and roadmap status
 - [x] Push to PR and verify checks
+- [x] Document dated OSV exceptions for no-fix advisories
+- [x] Raise fixable dependency floors instead of suppressing fixed advisories
+- [x] Track `osv-scanner.toml` in PR guard feature-memory checks
