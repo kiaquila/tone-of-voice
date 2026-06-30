@@ -50,15 +50,18 @@ jobs:
           echo "Changed files:"
           echo "$changed"
 
-          tracked_change=false
-          while IFS= read -r f; do
-            case "$f" in
-              src/*|src/**/*|scripts/*|scripts/**/*|tests/*|tests/**/*|.github/workflows/*|.github/workflows/**/*|evals/*|evals/**/*|requirements.txt|requirements-dev.txt|pyproject.toml|osv-scanner.toml|README.md)
-                tracked_change=true
-                break
-                ;;
-            esac
-          done <<< "$changed"
+          tracked_change="$(
+            CHANGED_FILES="$changed" python - <<'PY'
+          import os
+          import sys
+
+          sys.path.insert(0, "scripts")
+          import check_feature_memory as cfm
+
+          changed = [line for line in os.environ["CHANGED_FILES"].splitlines() if line]
+          print("true" if any(cfm.is_product_path(path) for path in changed) else "false")
+          PY
+          )"
 
           if [ "$tracked_change" = "false" ]; then
             echo "No tracked product or workflow changes — guard passes."
@@ -68,7 +71,7 @@ jobs:
           docs_updated=false
           while IFS= read -r f; do
             case "$f" in
-              docs/*.md|docs/**/*.md|specs/*.md|specs/**/*.md|AGENTS.md|README.md)
+              docs/*.md|docs/**/*.md|specs/*.md|specs/**/*.md|AGENTS.md|CLAUDE.md|README.md)
                 docs_updated=true
                 break
                 ;;

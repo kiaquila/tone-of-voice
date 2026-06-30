@@ -2,10 +2,12 @@
 import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { findRepoRoot, parseArgs, walkFiles } from "./shared.mjs";
+import { findRepoRoot, parseArgs, readConfig, walkFiles } from "./shared.mjs";
 
 const args = parseArgs();
 const root = findRepoRoot();
+const config = readConfig(root);
+const baseRef = args.base || `origin/${config.defaultBaseBranch || "main"}`;
 const python = existsSync(join(root, ".venv/bin/python"))
   ? join(root, ".venv/bin/python")
   : process.env.PYTHON || "python3";
@@ -62,6 +64,7 @@ if (args["syntax-only"]) {
 
 run(process.execPath, ["scripts/check-repo-baseline.mjs"], "Repository baseline check");
 run(python, ["scripts/check_feature_memory.py", "--worktree"], "Feature-memory check");
+run(python, ["scripts/check_feature_memory.py", baseRef, "HEAD"], "Feature-memory branch-diff check");
 nodeSyntaxCheck();
 nodeTestSuite();
 pythonSyntaxCheck();

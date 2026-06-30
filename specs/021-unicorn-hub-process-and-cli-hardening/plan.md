@@ -58,7 +58,7 @@ repository control-plane scripts.
 
 | Acceptance criterion | Evidence |
 | --- | --- |
-| AC-001 | `pnpm run preflight` includes `python scripts/check_feature_memory.py --worktree`; PR `guard` will verify branch diff |
+| AC-001 | `pnpm run preflight` includes dirty-worktree and committed branch-diff feature-memory checks; PR `guard` verifies the trusted base/head diff |
 | AC-002 | `tests/test_cli_path_hardening.py` plus `pnpm run preflight` |
 | AC-003 | README documents `draft_post.py --env-file` as the explicit external credential-file exception |
 | AC-004 | `tests/ai-review-helpers.test.mjs`, `tests/ai-review-rerun.test.mjs`, and `node --test tests/*.test.mjs` |

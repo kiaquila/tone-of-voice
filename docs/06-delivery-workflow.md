@@ -53,6 +53,8 @@ Protects repository memory and process discipline:
 - product or workflow changes must include a complete `specs/<feature-id>/` folder
 - trusted guard code must keep running from the base branch checkout pinned to
   `github.event.pull_request.base.sha`
+- process-control paths such as `.unicorn-hub/`, `.specify/`, `AGENTS.md`,
+  `CLAUDE.md`, and pnpm metadata are tracked workflow paths for guard purposes
 
 ### AI Review
 
@@ -135,9 +137,10 @@ Local preflight:
 pnpm run preflight
 ```
 
-This wraps the repository baseline, feature-memory guard, Python syntax/tests,
-Node syntax/tests, and offline eval slices. It does not require model credentials, Telegram
-credentials, or AWS production credentials.
+This wraps the repository baseline, feature-memory guard for both dirty
+worktree changes and the committed branch diff, Python syntax/tests, Node
+syntax/tests, and offline eval slices. It does not require model credentials,
+Telegram credentials, or AWS production credentials.
 
 ## Notes For Future Sessions
 

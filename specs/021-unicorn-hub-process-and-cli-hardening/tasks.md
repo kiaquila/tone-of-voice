@@ -68,6 +68,12 @@
 - Node review-helper tests are part of both local preflight and `baseline-checks`
   so changes to the event-driven review scripts are validated in the required
   gate.
+- Local preflight runs feature-memory validation for both dirty worktree changes
+  and the committed branch diff against the configured base branch.
+- Feature-memory and docs guard trigger paths include the adopted process-control
+  files from `.unicorn-hub/`, `.specify/`, `AGENTS.md`, `CLAUDE.md`, and pnpm
+  metadata, while `docs/` and `specs/` remain evidence paths rather than
+  self-triggering guard inputs.
 
 ### Known Issues
 
