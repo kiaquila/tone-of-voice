@@ -21,3 +21,12 @@ The AI review workflow will:
 - PR checks appear on GitHub
 - `osv-scan` passes
 - `AI Review` reports a clear state
+
+## Maintenance Approach
+
+For future OSV failures:
+
+- raise dependency lower bounds when the advisory has a fixed version
+- use root `osv-scanner.toml` only for advisories with no fixed release or no viable fixed dependency path
+- include `ignoreUntil` and a short reason for every exception
+- verify the same OSV action image locally when possible before pushing
