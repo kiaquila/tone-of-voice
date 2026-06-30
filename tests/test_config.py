@@ -59,12 +59,19 @@ class ResolveSessionStemTest(unittest.TestCase):
 
 class LoadProjectEnvTest(unittest.TestCase):
     def test_explicit_missing_file_raises(self) -> None:
+        # Use a path inside the allowed root (repo's parent tree) so the
+        # security guard does not pre-empt the FileNotFoundError. This
+        # test specifically exercises the "exists?" branch, not the
+        # path-confinement branch (covered in test_cli_path_hardening.py).
+        missing_path = config.repo_root() / "tests" / ".env.absent.does.not.exist"
         with self.assertRaises(FileNotFoundError):
-            config.load_project_env("/nonexistent/path/.env.absent")
+            config.load_project_env(str(missing_path))
 
     def test_explicit_existing_file_loads(self) -> None:
         import tempfile
 
+        # Explicit --env-file is the documented credential-file exception:
+        # local secrets may live outside the repository tree.
         with tempfile.TemporaryDirectory() as td:
             env_file = Path(td) / "custom.env"
             env_file.write_text("TONE_OF_VOICE_TEST_FLAG=ok\n", encoding="utf-8")
@@ -87,11 +94,18 @@ class DefaultEnvCandidatesTest(unittest.TestCase):
         self.assertEqual(candidates[0], config.repo_root() / ".env")
 
     def test_fallback_env_var_overrides_default(self) -> None:
+        # Pick an absolute path that lives under the allowed root
+        # (repo's parent tree). The previous version of this test used
+        # /tmp/alt.env, which is outside the new boundary applied to
+        # absolute paths too (closes Codex P2).
+        parent_env = (config.repo_root().parent / "alt.env").resolve()
         with mock.patch.dict(
-            os.environ, {"TONE_OF_VOICE_FALLBACK_ENV": "/tmp/alt.env"}, clear=False
+            os.environ,
+            {"TONE_OF_VOICE_FALLBACK_ENV": str(parent_env)},
+            clear=False,
         ):
             candidates = config.default_env_candidates()
-        self.assertIn(Path("/tmp/alt.env"), candidates)
+        self.assertIn(parent_env, candidates)
 
     def test_relative_traversal_outside_parent_raises(self) -> None:
         with mock.patch.dict(
@@ -101,6 +115,19 @@ class DefaultEnvCandidatesTest(unittest.TestCase):
         ):
             with self.assertRaises(ValueError):
                 config.default_env_candidates()
+
+    def test_absolute_path_outside_allowed_root_raises(self) -> None:
+        # The fallback boundary rejects absolute paths outside the parent tree.
+        # Unlike explicit --env-file, TONE_OF_VOICE_FALLBACK_ENV is ambient
+        # process state and must not silently redirect dotenv loading.
+        with mock.patch.dict(
+            os.environ,
+            {"TONE_OF_VOICE_FALLBACK_ENV": "/tmp/outside-allowed-root.env"},
+            clear=False,
+        ):
+            with self.assertRaises(ValueError) as ctx:
+                config.default_env_candidates()
+            self.assertIn("outside the allowed root", str(ctx.exception))
 
 
 if __name__ == "__main__":

@@ -2,25 +2,60 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
 
 
-PRODUCT_PREFIXES = (
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_PRODUCT_PATHS = (
     "src/",
     "scripts/",
     "tests/",
     ".github/workflows/",
     "evals/",
-)
-PRODUCT_FILES = {
+    ".unicorn-hub/",
+    ".specify/",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
     "requirements.txt",
     "requirements-dev.txt",
+    "package.json",
+    "pnpm-workspace.yaml",
+    "pnpm-lock.yaml",
     "pyproject.toml",
     "osv-scanner.toml",
     "README.md",
-}
+)
+
+
+def _directory_pattern(path: str) -> str:
+    return path if path.endswith("/") else f"{path}/"
+
+
+def configured_product_paths(config_path: Path = REPO_ROOT / ".unicorn-hub/config.json") -> tuple[str, ...]:
+    if not config_path.exists():
+        return DEFAULT_PRODUCT_PATHS
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    paths = config.get("productPaths")
+    if not isinstance(paths, list) or not all(isinstance(path, str) for path in paths):
+        return DEFAULT_PRODUCT_PATHS
+
+    # `docs/` and `specs/` are evidence locations for the guard itself. Treating
+    # them as triggers would make a docs-only/spec-only cleanup require a second
+    # spec folder, while README.md and process-control files still trigger.
+    evidence_dirs = {
+        _directory_pattern(str(config.get("docsDir", "docs"))),
+        _directory_pattern(str(config.get("specsDir", "specs"))),
+    }
+    return tuple(path for path in paths if path not in evidence_dirs)
+
+
+PRODUCT_PATHS = configured_product_paths()
 
 
 def git_changed_files(base_ref: str, head_ref: str) -> list[str]:
@@ -56,7 +91,10 @@ def git_changed_files_in_worktree() -> list[str]:
 
 
 def is_product_path(path: str) -> bool:
-    return path in PRODUCT_FILES or path.startswith(PRODUCT_PREFIXES)
+    return any(
+        path.startswith(pattern) if pattern.endswith("/") else path == pattern
+        for pattern in PRODUCT_PATHS
+    )
 
 
 def feature_ids(changed_files: list[str]) -> set[str]:

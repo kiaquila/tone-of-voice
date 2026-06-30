@@ -11,6 +11,9 @@ Current required checks:
 - `AI Review` (Codex gate for non-draft pull requests)
 - `osv-scan`
 
+Repository process defaults live in `.unicorn-hub/config.json`. The durable
+project memory still lives under `docs/`, not `docs_project/`.
+
 ## What These Checks Do
 
 ### baseline-checks
@@ -20,6 +23,7 @@ Runs the minimum validation needed to keep the repository healthy:
 - dependency install
 - Python syntax validation
 - unit tests
+- Node helper tests for AI review routing and rerun behavior
 - offline regression eval slice for drafting, eval, feedback, and core voice-memory changes
 - offline retrieval experiment slice for style-memory variants
 - offline generated-output A/B experiment slice for saved draft variants
@@ -29,6 +33,7 @@ Runs the minimum validation needed to keep the repository healthy:
   affect drafting or retrieval behavior, with one shared detection step feeding
   the three eval slices
 - CLI `--help` smoke checks
+- local preflight parity through `pnpm run preflight`
 
 Trust-boundary note:
 
@@ -46,6 +51,17 @@ Protects repository memory and process discipline:
 
 - product or workflow changes must include a durable docs update
 - product or workflow changes must include a complete `specs/<feature-id>/` folder
+- trusted guard code must keep running from the base branch checkout pinned to
+  `github.event.pull_request.base.sha`
+- process-control paths such as `.unicorn-hub/`, `.specify/`, `AGENTS.md`,
+  `CLAUDE.md`, and pnpm metadata are tracked workflow paths for guard purposes
+
+### AI Review
+
+Runs the codex-only review gate. The gate is event-driven: it fails quickly
+when current-head trusted review evidence is missing, records trusted
+`@codex review` requests through `AI Command Policy`, and reruns the PR-linked
+`AI Review` check when trusted review triggers or Codex evidence appear.
 
 ## Current Scope
 
@@ -68,6 +84,11 @@ Already implemented:
 - shared experiment harness helpers and consolidated eval path-filter detection
 - Telegram bot runner, offline smoke check, final feedback capture, and `/stat` scoring
 - automated production deploy workflow for the Telegram bot via GitHub OIDC, S3 release artifacts, AWS SSM, and systemd
+- adapted Unicorn Hub process config under `.unicorn-hub/`
+- `.specify/` constitution and feature-memory templates
+- `CLAUDE.md` implementation-agent guidance
+- local `pnpm run preflight` orchestration
+- event-driven `AI Review` rerun workflow
 
 Planned later:
 
@@ -102,6 +123,24 @@ AI Review notes:
 - the gate runs from the trusted base branch, not the PR workspace
 - unsupported `AI_REVIEW_AGENT` values fail closed
 - trusted human associations for AI command triggers are `OWNER`, `MEMBER`, and `COLLABORATOR`
+- bot-authored trigger comments do not start policy routing
+- trusted review evidence reruns the original PR-linked `AI Review` workflow
+  rather than creating a detached `workflow_dispatch` check
+- trusted review evidence newer than the last green `AI Review` reruns the
+  check instead of treating the old success as final
+- newly introduced rerun workflows no-op during bootstrap when the trusted base
+  branch does not yet contain their trusted script, then activate after merge
+
+Local preflight:
+
+```bash
+pnpm run preflight
+```
+
+This wraps the repository baseline, feature-memory guard for both dirty
+worktree changes and the committed branch diff, Python syntax/tests, Node
+syntax/tests, and offline eval slices. It does not require model credentials,
+Telegram credentials, or AWS production credentials.
 
 ## Notes For Future Sessions
 

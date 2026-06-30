@@ -44,6 +44,11 @@ Already completed:
   selected variants, final edits, and correction tags
 - shared, path-hardened experiment CLI helpers for the regression, retrieval,
   and generated-output harnesses
+- adapted Unicorn Hub process layer with repository-local config, spec/SENAR
+  templates, Claude implementation guidance, local preflight/orchestration, and
+  event-driven Codex review reruns
+- repository-local path hardening for the remaining draft, style-memory query,
+  style-memory build, and feedback capture CLIs
 
 Next recommended steps:
 
@@ -224,8 +229,9 @@ Execution order:
 6. Step 6 - RAG Style Memory And Experiment Harness - complete
 7. Step 6 follow-ups - generated-output A/B tests - first offline harness complete
 8. Step 6 follow-ups - experiment harness hardening - complete
-9. Step 6 follow-ups - judge evals before cross-platform expansion
-10. Step 7 - Cross-Platform Expansion - planned after retrieval and generated-output eval loops are stable
+9. Step 6 follow-ups - Unicorn process and CLI hardening - complete
+10. Step 6 follow-ups - judge evals before cross-platform expansion
+11. Step 7 - Cross-Platform Expansion - planned after retrieval and generated-output eval loops are stable
 
 ## Spec Pattern
 

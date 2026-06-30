@@ -1,0 +1,47 @@
+{
+  "docsDir": "docs",
+  "specsDir": "specs",
+  "productPaths": [
+    "src/",
+    "scripts/",
+    "tests/",
+    ".github/workflows/",
+    "evals/",
+    "docs/",
+    "specs/",
+    ".unicorn-hub/",
+    ".specify/",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "pyproject.toml",
+    "osv-scanner.toml",
+    "requirements.txt",
+    "requirements-dev.txt",
+    "package.json",
+    "pnpm-workspace.yaml",
+    "pnpm-lock.yaml"
+  ],
+  "requiredChecks": [
+    "baseline-checks",
+    "guard",
+    "AI Review",
+    "osv-scan"
+  ],
+  "defaultBaseBranch": "main",
+  "defaultImplementationAgent": "claude",
+  "defaultReviewAgent": "codex",
+  "reviewAgents": [
+    "codex"
+  ],
+  "commands": {
+    "install": "pip install -e '.[dev]'",
+    "test": "python -m pytest tests",
+    "preflight": "pnpm run preflight"
+  },
+  "profile": "python-telegram-bot",
+  "docsSystem": "docs",
+  "codexOnlyReview": true
+}

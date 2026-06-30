@@ -282,11 +282,18 @@ then add Ragas or MLflow on top of the generated-output contracts.
    - CI computes eval-impacting path changes once and fans out to the relevant
      slices.
 
-3. Add Ragas or a lightweight judge-based eval layer.
+3. Harden remaining CLI/process surfaces. - complete
+   - `draft_post.py`, `build_style_memory_index.py`, `query_style_memory.py`,
+     and `capture_feedback.py` now use the same repository-local path boundary
+     for user-supplied artifact paths.
+   - Unicorn Hub's target-repo process layer adds local preflight and
+     event-driven review reruns without changing generation behavior.
+
+4. Add Ragas or a lightweight judge-based eval layer.
    - Use it after real generated drafts and final edits exist.
    - Evaluate generated output quality, context relevance, and whether retrieved
      memory was actually useful.
 
-4. Then continue Step 7 cross-platform expansion.
+5. Then continue Step 7 cross-platform expansion.
    - Expand LinkedIn and Threads on top of the retrieval and eval surface rather
      than stretching the Telegram bot before the RAG loop is measurable.

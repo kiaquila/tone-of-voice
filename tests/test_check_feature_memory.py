@@ -23,16 +23,24 @@ class IsProductPathTest(unittest.TestCase):
         self.assertTrue(cfm.is_product_path("tests/test_metrics.py"))
         self.assertTrue(cfm.is_product_path(".github/workflows/pr-guard.yml"))
         self.assertTrue(cfm.is_product_path("evals/regression/step4-seed.json"))
+        self.assertTrue(cfm.is_product_path(".unicorn-hub/config.json"))
+        self.assertTrue(cfm.is_product_path(".specify/templates/spec-template.md"))
 
     def test_tracked_files(self) -> None:
+        self.assertTrue(cfm.is_product_path("AGENTS.md"))
+        self.assertTrue(cfm.is_product_path("CLAUDE.md"))
         self.assertTrue(cfm.is_product_path("requirements.txt"))
         self.assertTrue(cfm.is_product_path("requirements-dev.txt"))
+        self.assertTrue(cfm.is_product_path("package.json"))
+        self.assertTrue(cfm.is_product_path("pnpm-lock.yaml"))
+        self.assertTrue(cfm.is_product_path("pnpm-workspace.yaml"))
         self.assertTrue(cfm.is_product_path("pyproject.toml"))
+        self.assertTrue(cfm.is_product_path("osv-scanner.toml"))
         self.assertTrue(cfm.is_product_path("README.md"))
 
     def test_untracked_paths(self) -> None:
+        # docs/ and specs/ are evidence paths, not product-change triggers.
         self.assertFalse(cfm.is_product_path("docs/05-roadmap.md"))
-        self.assertFalse(cfm.is_product_path("AGENTS.md"))
         self.assertFalse(cfm.is_product_path("specs/001-x/spec.md"))
 
 

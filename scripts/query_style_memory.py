@@ -4,10 +4,10 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from pathlib import Path
 
 from tone_of_voice.config import repo_root
 from tone_of_voice.drafting import DraftRequest, load_reference_library
+from tone_of_voice.experiments_common import resolve_repo_path
 from tone_of_voice.llama_index_memory import (
     DEFAULT_LLAMA_INDEX_DIR,
     retrieve_llama_index_style_memory,
@@ -94,7 +94,8 @@ def parse_args() -> argparse.Namespace:
 def load_request(path: str) -> DraftRequest:
     if path == "-":
         return DraftRequest.from_mapping(json.load(sys.stdin))
-    with open(path, encoding="utf-8") as fh:
+    request_path = resolve_repo_path(path, label="draft request")
+    with request_path.open(encoding="utf-8") as fh:
         return DraftRequest.from_mapping(json.load(fh))
 
 
@@ -127,9 +128,7 @@ def build_query(args: argparse.Namespace) -> StyleMemoryQuery:
 
 
 def load_or_build_index(args: argparse.Namespace):
-    index_path = Path(args.index).expanduser()
-    if not index_path.is_absolute():
-        index_path = repo_root() / index_path
+    index_path = resolve_repo_path(args.index, label="style-memory index")
     if args.build or not index_path.exists():
         root = repo_root()
         library = load_reference_library(root)
@@ -143,14 +142,24 @@ def load_or_build_index(args: argparse.Namespace):
 
 def main() -> int:
     args = parse_args()
-    query = build_query(args)
-    index = load_or_build_index(args)
+    try:
+        query = build_query(args)
+        llama_index_dir = (
+            resolve_repo_path(args.llama_index_dir, label="llama index dir")
+            if args.backend == "llama_index"
+            else None
+        )
+        index = load_or_build_index(args)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
     if args.backend == "llama_index":
         matches = retrieve_llama_index_style_memory(
             index,
             query,
             limit=args.limit,
-            persist_dir=args.llama_index_dir,
+            persist_dir=llama_index_dir,
             rebuild=args.rebuild_llama_index,
         )
     else:

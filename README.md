@@ -40,7 +40,10 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 ## Repository Layout
 
+- `.unicorn-hub/config.json` — repository-local process config adapted from Unicorn Hub
+- `.specify/` — constitution and feature-memory templates for spec-first work
 - `AGENTS.md` — instructions for future AI sessions
+- `CLAUDE.md` — Claude-specific implementation-agent guidance
 - `docs/00-principles.md` — what this repo is for and how to keep it useful
 - `docs/01-current-voice-snapshot.md` — concise description of the current voice
 - `docs/02-memory-system.md` — long-term memory design
@@ -68,9 +71,17 @@ This repository is not a one-off prompt dump. It is durable memory for:
 
 ## Current Decision
 
-Use a lightweight documentation-first setup now. Borrow ideas from spec-driven workflows where they help, but avoid turning this repository into a heavy software process project before we actually need automation.
+Use the existing `docs/` voice-memory system as the durable project context, and
+borrow the target-repo pieces of Unicorn Hub where they make delivery safer:
+process config, spec/SENAR templates, local preflight, and AI-review routing.
+Do not import blueprint-source-only folders such as `templates/`, `profiles/`,
+or `docs_project/`.
 
-The current implementation order for future sessions lives in `docs/07-product-execution-plan.md`. Step 5 has a production Telegram bot in `<your group>`, and Step 6 now has local and LlamaIndex-backed RAG-style memory paths plus the first generated-output A/B harness. The next sequence is judge-style evals before cross-platform expansion.
+The current implementation order for future sessions lives in
+`docs/07-product-execution-plan.md`. Step 5 has a production Telegram bot in
+`<your group>`, and Step 6 now has local and LlamaIndex-backed RAG-style memory
+paths plus the first generated-output A/B harness. The next product sequence is
+judge-style evals before cross-platform expansion.
 
 ## Using The Telegram Bot
 
@@ -174,6 +185,12 @@ The eval runners share the same `--suite`, `--variant` where applicable, and
 repository: parent-directory escapes, absolute paths outside the repo, and
 symlink targets outside the repo all exit with code `2`. Use
 `data/working/evals/` for private ignored reports.
+
+The same repository-local path contract applies to user-supplied artifact paths
+for `draft_post.py`, `build_style_memory_index.py`, `query_style_memory.py`,
+and `capture_feedback.py`. The intentional exception is `draft_post.py
+--env-file`, which may point outside the repository when explicitly used for
+local credential reuse.
 
 Assemble a draft with RAG-style retrieval:
 

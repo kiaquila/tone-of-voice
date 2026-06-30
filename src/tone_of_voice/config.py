@@ -19,20 +19,19 @@ def default_env_candidates() -> list[Path]:
     if not fallback:
         return candidates
 
-    if Path(fallback).is_absolute():
-        fallback_path = Path(fallback)
-    else:
-        fallback_path = (root / fallback).resolve()
+    raw = Path(fallback)
+    fallback_path = raw.resolve() if raw.is_absolute() else (root / raw).resolve()
 
-    # Confine *relative* paths to the parent directory tree to prevent traversal
-    # (e.g. "../../etc/passwd"). Absolute paths are accepted as explicitly configured.
-    if not Path(fallback).is_absolute():
-        allowed_root = root.parent.resolve()
-        if not fallback_path.is_relative_to(allowed_root):
-            raise ValueError(
-                f"TONE_OF_VOICE_FALLBACK_ENV resolved to {fallback_path}, "
-                f"which is outside the allowed root {allowed_root}"
-            )
+    # Confine the ambient fallback to the repo and its parent directory tree
+    # regardless of whether it was supplied as absolute or relative. Unlike
+    # explicit `--env-file`, this env var can be inherited silently by many
+    # CLIs, so it must not point at arbitrary host paths.
+    allowed_root = root.parent.resolve()
+    if not fallback_path.is_relative_to(allowed_root):
+        raise ValueError(
+            f"TONE_OF_VOICE_FALLBACK_ENV resolved to {fallback_path}, "
+            f"which is outside the allowed root {allowed_root}"
+        )
 
     if fallback_path != (root / ".env").resolve():
         candidates.append(fallback_path)
@@ -43,6 +42,9 @@ def default_env_candidates() -> list[Path]:
 def load_project_env(explicit_env_file: str | None = None) -> Path | None:
     if explicit_env_file:
         env_path = Path(explicit_env_file).expanduser().resolve()
+        # Explicit env files are the documented credential-file exception:
+        # callers may point at a private secrets path outside the repository.
+        # Ambient fallback discovery remains confined in default_env_candidates().
         if not env_path.exists():
             raise FileNotFoundError(f"Env file not found: {env_path}")
         load_dotenv(env_path, override=False)
