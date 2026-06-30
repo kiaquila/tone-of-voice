@@ -24,9 +24,12 @@ Out of scope:
 2. The repository must have an `AI Review` workflow that can run Claude review once repository configuration is provided.
 3. The repository docs must clearly distinguish between workflow code that exists and review configuration that still needs repository settings.
 4. The current PR should be updated and verified after these workflows are added.
+5. OSV exceptions must be dated, reasoned, and limited to advisories with no fixed dependency path.
 
 ## Acceptance Criteria
 
 - `osv-scan` appears on the PR and passes.
 - `AI Review` appears on the PR and provides a clear configured or disabled state.
 - Delivery docs explain how Claude review becomes active.
+- Fixable dependency advisories are handled by raising package floors rather than ignoring them.
+- Any no-fix OSV exception is recorded in `osv-scanner.toml` with an `ignoreUntil` date and a reason.

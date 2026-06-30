@@ -1,0 +1,4 @@
+[[IgnoredVulns]]
+id = "GHSA-p4gq-832x-fm9v"
+ignoreUntil = 2026-08-31
+reason = "nltk 3.9.4 is pulled transitively by llama-index-core>=0.14,<0.15, and no fixed NLTK release exists as of 2026-06-30. This project does not pass untrusted resource names into nltk.data.load(); revisit before expiry and remove once NLTK or LlamaIndex provides a fixed path."
