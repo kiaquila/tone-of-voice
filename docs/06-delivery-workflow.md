@@ -123,6 +123,8 @@ AI Review notes:
 - bot-authored trigger comments do not start policy routing
 - trusted review evidence reruns the original PR-linked `AI Review` workflow
   rather than creating a detached `workflow_dispatch` check
+- trusted review evidence newer than the last green `AI Review` reruns the
+  check instead of treating the old success as final
 - newly introduced rerun workflows no-op during bootstrap when the trusted base
   branch does not yet contain their trusted script, then activate after merge
 

@@ -14,6 +14,15 @@ function normalizeAgent(agent) {
   return String(agent || "codex").trim().toLowerCase() || "codex";
 }
 
+function parseTime(value) {
+  const time = Date.parse(value || "");
+  return Number.isFinite(time) ? time : null;
+}
+
+function runFinishedAt(run) {
+  return parseTime(run?.updated_at || run?.completed_at || run?.created_at);
+}
+
 export function shouldRouteAiReviewRerunEvent(event, selectedAgent = "codex", config = {}) {
   const agent = normalizeAgent(selectedAgent);
 
@@ -56,7 +65,7 @@ export function shouldRouteAiReviewRerunEvent(event, selectedAgent = "codex", co
   return false;
 }
 
-export function selectAiReviewRun(runs = [], headSha) {
+export function selectAiReviewRun(runs = [], headSha, evidenceCreatedAt = null) {
   const matchingRuns = runs
     .filter((run) => run.event === "pull_request" && run.head_sha === headSha)
     .sort((left, right) => Date.parse(right.created_at || "") - Date.parse(left.created_at || ""));
@@ -64,6 +73,26 @@ export function selectAiReviewRun(runs = [], headSha) {
   const activeRun = matchingRuns.find((run) => activeStatuses.has(run.status));
   if (activeRun) {
     return { action: "already_running", run: activeRun };
+  }
+
+  const completedRuns = matchingRuns.filter((run) => run.status === "completed");
+  const evidenceTime = parseTime(evidenceCreatedAt);
+  if (evidenceTime !== null) {
+    const successfulRunAfterEvidence = completedRuns.find((run) =>
+      run.conclusion === "success" && (runFinishedAt(run) ?? 0) >= evidenceTime
+    );
+    if (successfulRunAfterEvidence) {
+      return { action: "already_success", run: successfulRunAfterEvidence };
+    }
+
+    const rerunCandidate = completedRuns.find((run) =>
+      run.conclusion === "success" || rerunnableConclusions.has(run.conclusion)
+    );
+    if (rerunCandidate) {
+      return { action: "rerun", run: rerunCandidate };
+    }
+
+    return { action: "not_found", run: null };
   }
 
   const rerunnableRun = matchingRuns.find((run) =>
@@ -123,6 +152,7 @@ export async function rerunAiReviewForPrHead({
   token,
   repository,
   headSha,
+  evidenceCreatedAt = null,
   request = defaultRequest
 }) {
   if (!token || !repository || !headSha) {
@@ -136,7 +166,7 @@ export async function rerunAiReviewForPrHead({
     repository,
     `/repos/${owner}/${repo}/actions/workflows/ai-review.yml/runs?event=pull_request&head_sha=${encodeURIComponent(headSha)}`
   );
-  const selected = selectAiReviewRun(runs, headSha);
+  const selected = selectAiReviewRun(runs, headSha, evidenceCreatedAt);
 
   if (selected.action === "rerun") {
     await request(
@@ -168,7 +198,8 @@ async function resolvePullContext({ token, repository, event, request = defaultR
   if (event?.pull_request) {
     return {
       prNumber: event.pull_request.number,
-      headSha: event.pull_request.head?.sha
+      headSha: event.pull_request.head?.sha,
+      evidenceCreatedAt: event.review?.submitted_at || null
     };
   }
 
@@ -180,7 +211,8 @@ async function resolvePullContext({ token, repository, event, request = defaultR
   const pull = await request(token, repository, `/repos/${owner}/${repo}/pulls/${event.issue.number}`);
   return {
     prNumber: pull.number,
-    headSha: pull.head?.sha
+    headSha: pull.head?.sha,
+    evidenceCreatedAt: event.comment?.created_at || null
   };
 }
 
@@ -206,7 +238,8 @@ async function main() {
   const result = await rerunAiReviewForPrHead({
     token,
     repository,
-    headSha: context.headSha
+    headSha: context.headSha,
+    evidenceCreatedAt: context.evidenceCreatedAt
   });
   console.log(result.message);
 }

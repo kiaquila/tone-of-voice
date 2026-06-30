@@ -60,6 +60,9 @@
 - `publish-branch.mjs` defaults to draft PRs, but supports `--ready`; this PR
   will be opened ready because the user explicitly requested an open PR and
   immediate Codex review.
+- AI Review reruns compare trusted evidence time to the latest successful
+  PR-linked `AI Review`; a newer Codex review must refresh the gate even when
+  the same head SHA already had an older green check.
 
 ### Known Issues
 

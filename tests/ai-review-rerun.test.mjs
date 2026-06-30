@@ -153,6 +153,35 @@ test("AI Review rerun selector ignores dispatch runs and reports success states"
   );
 });
 
+test("AI Review rerun selector reruns prior success after newer trusted evidence", () => {
+  const priorSuccess = {
+    id: 21,
+    event: "pull_request",
+    head_sha: "abc",
+    status: "completed",
+    conclusion: "success",
+    created_at: "2026-05-12T10:00:00Z",
+    updated_at: "2026-05-12T10:01:00Z"
+  };
+
+  assert.deepEqual(
+    selectAiReviewRun([priorSuccess], "abc", "2026-05-12T10:05:00Z"),
+    { action: "rerun", run: priorSuccess }
+  );
+
+  const laterSuccess = {
+    ...priorSuccess,
+    id: 22,
+    created_at: "2026-05-12T10:10:00Z",
+    updated_at: "2026-05-12T10:11:00Z"
+  };
+
+  assert.deepEqual(
+    selectAiReviewRun([priorSuccess, laterSuccess], "abc", "2026-05-12T10:05:00Z"),
+    { action: "already_success", run: laterSuccess }
+  );
+});
+
 test("AI Review rerun selector prefers active runs, then latest rerunnable failures", () => {
   const runs = [
     {
@@ -227,6 +256,49 @@ test("AI Review rerun helper calls the workflow rerun endpoint for current-head 
     },
     {
       path: "/repos/owner/repo/actions/runs/42/rerun",
+      method: "POST"
+    }
+  ]);
+});
+
+test("AI Review rerun helper reruns a successful run that predates evidence", async () => {
+  const calls = [];
+  const request = async (_token, _repository, path, options = {}) => {
+    calls.push({ path, method: options.method || "GET" });
+    if (path.includes("/actions/workflows/ai-review.yml/runs")) {
+      return {
+        workflow_runs: [
+          {
+            id: 77,
+            event: "pull_request",
+            head_sha: "abc",
+            status: "completed",
+            conclusion: "success",
+            created_at: "2026-05-12T10:00:00Z",
+            updated_at: "2026-05-12T10:01:00Z"
+          }
+        ]
+      };
+    }
+    return null;
+  };
+
+  const result = await rerunAiReviewForPrHead({
+    token: "token",
+    repository: "owner/repo",
+    headSha: "abc",
+    evidenceCreatedAt: "2026-05-12T10:05:00Z",
+    request
+  });
+
+  assert.equal(result.action, "rerun");
+  assert.deepEqual(calls, [
+    {
+      path: "/repos/owner/repo/actions/workflows/ai-review.yml/runs?event=pull_request&head_sha=abc&per_page=100&page=1",
+      method: "GET"
+    },
+    {
+      path: "/repos/owner/repo/actions/runs/77/rerun",
       method: "POST"
     }
   ]);
