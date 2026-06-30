@@ -32,6 +32,17 @@ function nodeSyntaxCheck() {
   console.log(`Node syntax check passed for ${files.length} files.`);
 }
 
+function nodeTestSuite() {
+  const files = walkFiles(root, {
+    include: (file) => /^tests\/.+\.test\.mjs$/.test(file)
+  });
+  if (!files.length) {
+    console.log("No Node test files found.");
+    return;
+  }
+  run(process.execPath, ["--test", ...files], "Node test suite");
+}
+
 function pythonSyntaxCheck() {
   const files = walkFiles(root, {
     include: (file) => /^(scripts|src|tests)\/.+\.py$/.test(file)
@@ -52,6 +63,7 @@ if (args["syntax-only"]) {
 run(process.execPath, ["scripts/check-repo-baseline.mjs"], "Repository baseline check");
 run(python, ["scripts/check_feature_memory.py", "--worktree"], "Feature-memory check");
 nodeSyntaxCheck();
+nodeTestSuite();
 pythonSyntaxCheck();
 run(python, ["-m", "pytest", "tests"], "Python test suite");
 run(python, ["scripts/run_regression_evals.py"], "Regression eval slice");

@@ -36,6 +36,14 @@ jobs:
       - name: Run unit tests
         run: python -m pytest tests
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Run Node tests
+        run: node --test tests/*.test.mjs
+
       - name: Detect eval-impacting changes
         id: eval_changes
         env:

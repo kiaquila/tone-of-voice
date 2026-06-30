@@ -118,7 +118,8 @@ if (requested.kind === "review") {
     const rerunResult = await rerunAiReviewForPrHead({
       token,
       repository,
-      headSha
+      headSha,
+      evidenceCreatedAt: requestedAt
     });
     console.log(rerunResult.message);
   } catch (error) {

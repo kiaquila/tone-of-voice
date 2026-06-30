@@ -23,6 +23,7 @@ Runs the minimum validation needed to keep the repository healthy:
 - dependency install
 - Python syntax validation
 - unit tests
+- Node helper tests for AI review routing and rerun behavior
 - offline regression eval slice for drafting, eval, feedback, and core voice-memory changes
 - offline retrieval experiment slice for style-memory variants
 - offline generated-output A/B experiment slice for saved draft variants
@@ -135,7 +136,7 @@ pnpm run preflight
 ```
 
 This wraps the repository baseline, feature-memory guard, Python syntax/tests,
-and offline eval slices. It does not require model credentials, Telegram
+Node syntax/tests, and offline eval slices. It does not require model credentials, Telegram
 credentials, or AWS production credentials.
 
 ## Notes For Future Sessions

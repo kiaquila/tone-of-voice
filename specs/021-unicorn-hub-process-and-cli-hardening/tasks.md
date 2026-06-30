@@ -63,6 +63,11 @@
 - AI Review reruns compare trusted evidence time to the latest successful
   PR-linked `AI Review`; a newer Codex review must refresh the gate even when
   the same head SHA already had an older green check.
+- Trusted `@codex review` comments pass their request time into the rerun
+  selector so an older green `AI Review` cannot satisfy a newer review request.
+- Node review-helper tests are part of both local preflight and `baseline-checks`
+  so changes to the event-driven review scripts are validated in the required
+  gate.
 
 ### Known Issues
 
