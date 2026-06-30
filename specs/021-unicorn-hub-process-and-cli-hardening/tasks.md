@@ -69,3 +69,6 @@
   plane after this PR merges. This PR's own review trigger may still be routed
   partly through the pre-existing default-branch policy, so manual rerun may be
   needed if the first required check finishes before Codex evidence appears.
+- The rerun workflow must no-op during bootstrap if the trusted default branch
+  does not yet contain `scripts/ai-review-rerun.mjs`; running PR-supplied rerun
+  code would break the trusted-base boundary.

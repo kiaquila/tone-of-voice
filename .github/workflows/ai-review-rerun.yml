@@ -63,7 +63,19 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
 
+      - name: Check trusted rerun script availability
+        id: rerun_script
+        shell: bash
+        run: |
+          if [ -f scripts/ai-review-rerun.mjs ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Trusted base does not contain scripts/ai-review-rerun.mjs yet; skipping bootstrap rerun."
+          fi
+
       - name: Rerun AI Review for trusted evidence
+        if: steps.rerun_script.outputs.available == 'true'
         run: node scripts/ai-review-rerun.mjs
         env:
           GITHUB_TOKEN: ${{ github.token }}
